@@ -31,7 +31,17 @@
                 <div class="collapse navbar-collapse" id="navbarSupportedContent">
                     <!-- Left Side Of Navbar -->
                     <ul class="navbar-nav me-auto">
-
+                        @auth
+                            <li class="nav-item">
+                                <form action="{{ route('git.pull') }}" method="POST" class="d-inline">
+                                    @csrf
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary ms-2"
+                                            onclick="return confirm('Pull latest changes from GitHub and run migrations?')">
+                                        <i class="bi bi-cloud-download"></i> Pull Updates
+                                    </button>
+                                </form>
+                            </li>
+                        @endauth
                     </ul>
 
                     <!-- Right Side Of Navbar -->

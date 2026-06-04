@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\GitController;
 use App\Http\Controllers\HomeController;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
@@ -18,3 +19,5 @@ Auth::routes(['register' => $enableRegistration]);
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/home', [HomeController::class, 'index']);
+
+Route::post('/git/pull', [GitController::class, 'pull'])->name('git.pull')->middleware('auth');
