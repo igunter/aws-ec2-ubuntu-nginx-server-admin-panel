@@ -12,15 +12,12 @@ class GitController extends Controller
     public function pull()
     {
         $base = base_path();
-        $php  = PHP_BINARY;
-
-        $phpBin = escapeshellarg($php);
 
         $steps = [
             ['label' => 'git fetch',        'cmd' => 'git fetch origin'],
             ['label' => 'git reset',        'cmd' => 'git reset --hard origin/main'],
             ['label' => 'composer install', 'cmd' => 'composer install --no-dev --optimize-autoloader --no-interaction'],
-            ['label' => 'artisan migrate',  'cmd' => "$phpBin artisan migrate --force --no-interaction"],
+            ['label' => 'artisan migrate',  'cmd' => 'php artisan migrate --force --no-interaction'],
         ];
 
         $results = [];
