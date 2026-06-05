@@ -121,15 +121,22 @@
     </div>
 
     <script>
+        function showOverlay(message) {
+            var overlay = document.getElementById('pull-overlay');
+            if (!overlay) return;
+            var label = overlay.querySelector('p');
+            if (label && message) label.textContent = message;
+            overlay.classList.remove('d-none');
+            overlay.classList.add('d-flex');
+        }
+
         (function () {
             var form = document.getElementById('git-pull-form');
             if (!form) return;
             form.addEventListener('submit', function (e) {
                 e.preventDefault();
                 if (!confirm('Pull latest changes from GitHub and run migrations?')) return;
-                var overlay = document.getElementById('pull-overlay');
-                overlay.classList.remove('d-none');
-                overlay.classList.add('d-flex');
+                showOverlay('Pulling updates…');
                 form.submit();
             });
         })();

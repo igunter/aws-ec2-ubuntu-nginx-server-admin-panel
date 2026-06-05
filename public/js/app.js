@@ -5,15 +5,6 @@
  * @param {string} nameId  - id of the name <input>
  * @param {string} slugId  - id of the slug <input>
  */
-function showOverlay(message) {
-    var overlay = document.getElementById('pull-overlay');
-    if (!overlay) return;
-    var label = overlay.querySelector('p');
-    if (label && message) label.textContent = message;
-    overlay.classList.remove('d-none');
-    overlay.classList.add('d-flex');
-}
-
 function bindSlugAutofill(nameId, slugId) {
     var name = document.getElementById(nameId);
     var slug = document.getElementById(slugId);
