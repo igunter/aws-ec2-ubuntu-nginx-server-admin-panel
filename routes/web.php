@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AccountController;
 use App\Http\Controllers\GitController;
 use App\Http\Controllers\HomeController;
 use App\Models\User;
@@ -20,8 +21,14 @@ Auth::routes([
     'login'    => true,
 ]);
 
-Route::get('/', [HomeController::class, 'index'])->name('home');
-Route::get('/home', [HomeController::class, 'index']);
+Route::middleware('auth')->group(function () {
+    Route::get('/', [HomeController::class, 'index'])->name('home');
+    Route::get('home', [HomeController::class, 'index']);
 
-Route::get('/git/pull', [GitController::class, 'show'])->name('git.pull.show')->middleware('auth');
-Route::post('/git/pull', [GitController::class, 'pull'])->name('git.pull')->middleware('auth');
+    Route::post('accounts/{account}/suspend', [AccountController::class, 'suspend'])->name('accounts.suspend');
+    Route::resource('accounts', AccountController::class);
+
+    Route::get('git/pull', [GitController::class, 'show'])->name('git.pull.show');
+    Route::post('git/pull', [GitController::class, 'pull'])->name('git.pull');
+});
+

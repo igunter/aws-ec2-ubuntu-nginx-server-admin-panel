@@ -5,7 +5,7 @@
         </a>
     </li>
     <li class="nav-item">
-        <a class="nav-link px-0 {{ request()->routeIs('git.pull.show') ? 'active fw-semibold' : '' }}" href="{{ route('git.pull.show') }}">
+        <a class="nav-link px-0 {{ request()->routeIs('accounts.*') ? 'active fw-semibold' : '' }}" href="{{ route('accounts.index') }}">
             <i class="bi bi-people"></i> Accounts
         </a>
     </li>
