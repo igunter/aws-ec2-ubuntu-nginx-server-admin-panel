@@ -7,8 +7,9 @@
 @section('content')
 <div class="card">
     <h5 class="card-header">
-        {{ __('Accounts') }}
-        <a href="{{ route('accounts.index') }}" class="btn btn-sm btn-primary float-end">Account Details</a>
+        {{ __('Account Details') }}
+        <a href="{{ route('accounts.index') }}" class="btn btn-sm btn-primary float-end">List Accounts</a>
+        <a href="{{ route('accounts.edit', $account) }}" class="btn btn-sm btn-primary float-end">Edit Account</a>
     </h5>
 
     <div class="card-body">
