@@ -98,7 +98,10 @@ class AccountController extends Controller
             'Failed to create web root.');
 
         $welcome = "<?php\necho '<h1>Welcome, {$domain}</h1>';\n";
-        Process::input($welcome)->run(['sudo', 'tee', "{$webRoot}/index.php"]);
+        $result = Process::input($welcome)->run(['sudo', 'tee', "{$webRoot}/index.php"]);
+        if (! $result->successful()) {
+            throw new \RuntimeException('Failed to create index.php. ' . trim($result->errorOutput()));
+        }
 
         $this->cmd(['sudo', 'chown', '-R', "{$slug}:{$slug}", $webRoot],
             'Failed to set web root ownership.');
