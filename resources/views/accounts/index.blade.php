@@ -40,8 +40,9 @@
                             <a href="{{ route('accounts.show', $account) }}" class="btn btn-sm btn-primary"><i class="bi bi-eye"></i></a>
                             <a href="{{ route('accounts.edit', $account) }}" class="btn btn-sm btn-secondary"><i class="bi bi-pencil"></i></a>
                             
-                            <form action="{{ route('accounts.destroy', $account) }}" method="POST" class="d-inline"
-                                  onsubmit="return confirm('Delete {{ $account->domain }} and remove all server files?')">
+                            <form action="{{ route('accounts.destroy', $account) }}" method="POST"
+                                  class="d-inline delete-form"
+                                  data-domain="{{ $account->domain }}">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="btn btn-sm btn-danger"><i class="bi bi-trash"></i></button>
@@ -71,8 +72,19 @@
         ]
     });
 
+    document.querySelectorAll('.delete-form').forEach(function (form) {
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            if (!confirm('Delete ' + form.dataset.domain + ' and remove all server files?')) return;
+            showOverlay('Deleting…');
+            form.submit();
+        });
+    });
+
     document.querySelectorAll('.suspend-toggle').forEach(function (toggle) {
         toggle.addEventListener('change', function () {
+            var label = this.checked ? 'Activating…' : 'Suspending…';
+            showOverlay(label);
             this.closest('.suspend-form').submit();
         });
     });

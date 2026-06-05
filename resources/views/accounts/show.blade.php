@@ -67,10 +67,12 @@
 @push('scripts')
 <script>
     document.getElementById('suspend-toggle').addEventListener('change', function () {
+        showOverlay(this.checked ? 'Activating…' : 'Suspending…');
         document.getElementById('suspend-form').submit();
     });
 
     document.getElementById('ssl-toggle').addEventListener('change', function () {
+        showOverlay(this.checked ? 'Enabling SSL…' : 'Disabling SSL…');
         document.getElementById('ssl-form').submit();
     });
 </script>
