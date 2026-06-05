@@ -158,7 +158,7 @@ class AccountController extends Controller
         $account->update(['is_active' => $activating]);
 
         $label = $activating ? 'activated' : 'suspended';
-        return redirect()->route('accounts.index')->with('success', "{$account->domain} {$label}.");
+        return back()->with('success', "{$account->domain} {$label}.");
     }
 
     private function provisionAccount(Account $account): void
