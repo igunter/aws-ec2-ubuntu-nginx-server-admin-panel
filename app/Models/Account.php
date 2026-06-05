@@ -11,6 +11,7 @@ class Account extends Model
 
     protected $fillable = [
         'is_active',
+        'ssl',
         'domain',
         'slug',
         'email',

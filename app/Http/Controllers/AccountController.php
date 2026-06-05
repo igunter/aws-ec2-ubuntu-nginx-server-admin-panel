@@ -45,7 +45,7 @@ class AccountController extends Controller
 
     public function show(Account $account)
     {
-        //
+        return view('accounts.show', compact('account'));
     }
 
     public function edit(Account $account)
@@ -76,6 +76,52 @@ class AccountController extends Controller
         $account->delete();
 
         return redirect()->route('accounts.index')->with('success', "Account for {$domain} deleted.");
+    }
+
+    public function toggleSsl(Account $account)
+    {
+        $enabling = ! $account->ssl;
+
+        try {
+            if ($enabling) {
+                $this->provisionSsl($account);
+            } else {
+                $this->deprovisionSsl($account);
+            }
+        } catch (\RuntimeException $e) {
+            return redirect()->route('accounts.show', $account)->with('error', $e->getMessage());
+        }
+
+        $account->update(['ssl' => $enabling]);
+
+        return redirect()->route('accounts.show', $account)
+            ->with('success', "SSL " . ($enabling ? 'enabled' : 'disabled') . " for {$account->domain}.");
+    }
+
+    private function provisionSsl(Account $account): void
+    {
+        $command = [
+            'sudo', 'certbot', '--nginx',
+            '-d', $account->domain,
+            '--agree-tos',
+            '--non-interactive',
+        ];
+
+        if ($account->email) {
+            array_push($command, '--email', $account->email);
+        } else {
+            $command[] = '--register-unsafely-without-email';
+        }
+
+        $this->cmd($command, 'Failed to provision SSL certificate.');
+    }
+
+    private function deprovisionSsl(Account $account): void
+    {
+        $this->cmd(
+            ['sudo', 'certbot', 'delete', '--cert-name', $account->domain, '--non-interactive'],
+            'Failed to remove SSL certificate.'
+        );
     }
 
     public function suspend(Account $account)

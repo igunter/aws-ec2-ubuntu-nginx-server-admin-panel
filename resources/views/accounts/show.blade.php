@@ -1,0 +1,57 @@
+@extends('layouts.app')
+
+@push('styles')
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css">
+@endpush
+
+@section('content')
+<div class="card">
+    <h5 class="card-header">
+        {{ __('Accounts') }}
+        <a href="{{ route('accounts.index') }}" class="btn btn-sm btn-primary float-end">Account Details</a>
+    </h5>
+
+    <div class="card-body">
+        <div class="row mb-3">
+            <label class="col-sm-2 col-form-label fw-bold">Domain</label>
+            <div class="col">
+                <p class="form-control-plaintext">{{ $account->domain }}</p>
+            </div>
+        </div>
+        <div class="row mb-3">
+            <label class="col-sm-2 col-form-label fw-bold">Slug</label>
+            <div class="col">
+                <p class="form-control-plaintext">{{ $account->slug }}</p>
+            </div>
+        </div>
+        <div class="row mb-3">
+            <label class="col-sm-2 col-form-label fw-bold">Email</label>
+            <div class="col">
+                <p class="form-control-plaintext">{{ $account->email }}</p>
+            </div>
+        </div>
+        <div class="row mb-3">
+            <label class="col-sm-2 col-form-label fw-bold">SSL</label>
+            <div class="col">
+                <form action="{{ route('accounts.ssl.toggle', $account) }}" method="POST" id="ssl-form">
+                    @csrf
+                    @method('PATCH')
+                    <div class="form-check form-switch mt-2">
+                        <input class="form-check-input" type="checkbox" role="switch" id="ssl-toggle"
+                               {{ $account->ssl ? 'checked' : '' }}>
+                        <label class="form-check-label text-muted" for="ssl-toggle">Let's Encrypt</label>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+@endsection
+
+@push('scripts')
+<script>
+    document.getElementById('ssl-toggle').addEventListener('change', function () {
+        document.getElementById('ssl-form').submit();
+    });
+</script>
+@endpush
