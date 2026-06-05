@@ -3,12 +3,13 @@
 @section('content')
 <div class="card">
     <h5 class="card-header">
-        {{ __('Accounts') }}
-        <a href="{{ route('accounts.index') }}" class="btn btn-sm btn-primary float-end">Edit Account</a>
+        {{ __('Edit Account') }}
+        <a href="{{ route('accounts.index') }}" class="btn btn-sm btn-primary float-end">List Accounts</a>
     </h5>
 
     <div class="card-body">
         <form action="{{ route('accounts.update', $account->id) }}" method="POST">
+            @method('PATCH')
             @csrf
             <div class="row mb-3">
                 <label for="domain" class="col-sm-2 col-form-label">Domain</label>
