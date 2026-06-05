@@ -20,7 +20,7 @@
 <body>
     <div id="app">
         <nav class="navbar navbar-expand-md navbar-light bg-white shadow-sm">
-            <div class="container">
+            <div class="container-fluid container-lg">
                 <span>
                     @auth
                     <span class="d-md-none me-1 py-1 px-2"
@@ -34,20 +34,6 @@
                 </span>
 
                 <div class="navbar">
-                    <!-- Left Side Of Navbar -->
-                    <ul class="navbar-nav me-auto">
-                        @auth
-                            <li class="nav-item">
-                                <form id="git-pull-form" action="{{ route('git.pull') }}" method="POST" class="d-inline">
-                                    @csrf
-                                    <button type="submit" class="btn btn-sm btn-outline-secondary ms-2">
-                                        <i class="bi bi-cloud-download"></i> Pull Updates
-                                    </button>
-                                </form>
-                            </li>
-                        @endauth
-                    </ul>
-
                     <!-- Right Side Of Navbar -->
                     <ul class="navbar-nav ms-auto">
                         <!-- Authentication Links -->
@@ -64,22 +50,8 @@
                                 </li>
                             @endif
                         @else
-                            <li class="nav-item dropdown">
-                                <a id="navbarDropdown" class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" v-pre>
-                                    {{ Auth::user()->name }}
-                                </a>
-
-                                <div class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                                    <a class="dropdown-item" href="{{ route('logout') }}"
-                                       onclick="event.preventDefault();
-                                                     document.getElementById('logout-form').submit();">
-                                        {{ __('Logout') }}
-                                    </a>
-
-                                    <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
-                                        @csrf
-                                    </form>
-                                </div>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#">{{ Auth::user()->name }}</a>
                             </li>
                         @endguest
                     </ul>
@@ -89,7 +61,7 @@
 
         <main class="py-4">
             @auth
-                <div class="container">
+                <div class="container-fluid container-lg">
                     <div class="row justify-content-center">
                         <div class="col-md-9">
                             @yield('content')
