@@ -126,7 +126,29 @@ class AccountController extends Controller
 
     public function suspend(Account $account)
     {
-        //
+        $sitesAvailable = "/etc/nginx/sites-available/{$account->domain}";
+        $activating = ! $account->is_active;
+
+        try {
+            $config = $activating
+                ? $this->nginxConfig($account->domain, "/var/www/{$account->slug}")
+                : $this->suspendedNginxConfig($account->domain);
+
+            $result = Process::input($config)->run(['sudo', 'tee', $sitesAvailable]);
+            if (! $result->successful()) {
+                throw new \RuntimeException('Failed to update Nginx config. ' . trim($result->errorOutput()));
+            }
+
+            $this->cmd(['sudo', 'nginx', '-t'], 'Nginx config test failed.');
+            $this->cmd(['sudo', 'systemctl', 'reload', 'nginx'], 'Failed to reload Nginx.');
+        } catch (\RuntimeException $e) {
+            return redirect()->route('accounts.index')->with('error', $e->getMessage());
+        }
+
+        $account->update(['is_active' => $activating]);
+
+        $label = $activating ? 'activated' : 'suspended';
+        return redirect()->route('accounts.index')->with('success', "{$account->domain} {$label}.");
     }
 
     private function provisionAccount(Account $account): void
@@ -171,6 +193,26 @@ class AccountController extends Controller
         if (! $result->successful()) {
             throw new \RuntimeException($errorMessage . ' ' . trim($result->errorOutput()));
         }
+    }
+
+    private function suspendedNginxConfig(string $domain): string
+    {
+        return <<<NGINX
+        server {
+            listen 80;
+            server_name {$domain};
+
+            location / {
+                return 503;
+            }
+
+            error_page 503 /503.html;
+            location = /503.html {
+                add_header Content-Type text/html;
+                return 503 '<!DOCTYPE html><html><head><title>Service Unavailable</title><style>body{font-family:sans-serif;text-align:center;padding:4rem}h1{font-size:3rem}p{color:#666}</style></head><body><h1>503</h1><p>This site is temporarily unavailable.</p></body></html>';
+            }
+        }
+        NGINX;
     }
 
     private function nginxConfig(string $domain, string $webRoot): string

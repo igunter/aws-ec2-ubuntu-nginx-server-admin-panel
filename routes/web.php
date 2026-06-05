@@ -25,7 +25,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/', [HomeController::class, 'index'])->name('home');
     Route::get('home', [HomeController::class, 'index']);
 
-    Route::post('accounts/{account}/suspend', [AccountController::class, 'suspend'])->name('accounts.suspend');
+    Route::patch('accounts/{account}/suspend', [AccountController::class, 'suspend'])->name('accounts.suspend');
     Route::patch('accounts/{account}/ssl', [AccountController::class, 'toggleSsl'])->name('accounts.ssl.toggle');
     Route::resource('accounts', AccountController::class);
 

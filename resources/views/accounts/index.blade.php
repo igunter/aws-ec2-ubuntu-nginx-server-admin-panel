@@ -16,8 +16,8 @@
             <thead>
                 <tr>
                     <th>Domain</th>
-                    <th>Slug</th>
-                    <th>Status</th>
+                    <th class="d-none d-md-table-cell">Slug</th>
+                    <th>Active</th>
                     <th></th>
                 </tr>
             </thead>
@@ -25,11 +25,21 @@
                 @foreach ($accounts as $account)
                     <tr>
                         <td>{{ $account->domain }}</td>
-                        <td>{{ $account->slug }}</td>
-                        <td>{{ $account->is_active ? 'Active' : 'Inactive' }}</td>
+                        <td class="d-none d-md-table-cell">{{ $account->slug }}</td>
+                        <td>
+                            <form action="{{ route('accounts.suspend', $account) }}" method="POST" class="suspend-form">
+                                @csrf
+                                @method('PATCH')
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input suspend-toggle" type="checkbox" role="switch"
+                                           {{ $account->is_active ? 'checked' : '' }}>
+                                </div>
+                            </form>
+                        </td>
                         <td>
                             <a href="{{ route('accounts.show', $account) }}" class="btn btn-sm btn-primary"><i class="bi bi-eye"></i></a>
                             <a href="{{ route('accounts.edit', $account) }}" class="btn btn-sm btn-secondary"><i class="bi bi-pencil"></i></a>
+                            
                             <form action="{{ route('accounts.destroy', $account) }}" method="POST" class="d-inline"
                                   onsubmit="return confirm('Delete {{ $account->domain }} and remove all server files?')">
                                 @csrf
@@ -56,10 +66,15 @@
         dom: 'lBfrtip',
         pageLength: 25,
         columnDefs: [
-            { orderable: false, targets: -1 },
-            { searchable: false, targets: -1 },
+            { orderable: false, searchable: false, targets: [2, -1] },
             { className: 'text-end', targets: -1 }
         ]
+    });
+
+    document.querySelectorAll('.suspend-toggle').forEach(function (toggle) {
+        toggle.addEventListener('change', function () {
+            this.closest('.suspend-form').submit();
+        });
     });
 </script>
 @endpush
