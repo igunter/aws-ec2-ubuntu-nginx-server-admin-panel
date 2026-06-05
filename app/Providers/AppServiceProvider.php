@@ -20,12 +20,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        if (!app()->runningInConsole() && request()->server('SERVER_ADDR')) {
-            $scheme = request()->getScheme() ?: 'http';
-            $host = request()->server('SERVER_ADDR');
-
-            URL::forceRootUrl($scheme.'://'.$host);
-            config(['app.url' => $scheme.'://'.$host]);
-        }
+        //
     }
 }
