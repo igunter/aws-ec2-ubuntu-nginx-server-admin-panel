@@ -21,14 +21,19 @@
     <div id="app">
         <nav class="navbar navbar-expand-md navbar-light bg-white shadow-sm">
             <div class="container">
-                <a class="navbar-brand" href="{{ url('/') }}">
-                    {{ config('app.name', 'Laravel') }}
-                </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="{{ __('Toggle navigation') }}">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
+                <span>
+                    @auth
+                    <span class="d-md-none me-1 py-1 px-2"
+                            data-bs-toggle="offcanvas" data-bs-target="#sideNavOffcanvas" aria-controls="sideNavOffcanvas">
+                        <i class="bi bi-list"></i>
+                    </span>
+                    @endauth
+                    <a class="navbar-brand" href="{{ url('/') }}">
+                        {{ config('app.name', 'Laravel') }}
+                    </a>
+                </span>
 
-                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <div class="navbar">
                     <!-- Left Side Of Navbar -->
                     <ul class="navbar-nav me-auto">
                         @auth
@@ -83,11 +88,41 @@
         </nav>
 
         <main class="py-4">
-            @yield('content')
+            @auth
+                <div class="container">
+                    <div class="row justify-content-center">
+                        <div class="col-md-9">
+                            @yield('content')
+                        </div>
+                        <div class="col-md-3 d-none d-md-block order-md-first">
+                            <div class="card mb-4">
+                                <div class="card-header">Navigation</div>
+                                <div class="card-body">
+                                    @include('layouts.partials.navigation')
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @else
+                @yield('content')
+            @endauth
         </main>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+
+    @auth
+    <div class="offcanvas offcanvas-start" tabindex="-1" id="sideNavOffcanvas" aria-labelledby="sideNavOffcanvasLabel">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="sideNavOffcanvasLabel">Navigation</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body p-0">
+            @include('layouts.partials.navigation')
+        </div>
+    </div>
+    @endauth
 
     <!-- Pull Updates overlay -->
     <div id="pull-overlay" class="d-none position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center flex-column gap-3"
