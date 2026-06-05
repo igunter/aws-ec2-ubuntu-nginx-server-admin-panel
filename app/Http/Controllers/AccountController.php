@@ -152,7 +152,7 @@ class AccountController extends Controller
                 $this->cmd(['sudo', 'systemctl', 'reload', 'nginx'], 'Failed to reload Nginx.');
             }
         } catch (\RuntimeException $e) {
-            return redirect()->route('accounts.index')->with('error', $e->getMessage());
+            return back()->with('error', $e->getMessage());
         }
 
         $account->update(['is_active' => $activating]);

@@ -16,4 +16,9 @@ class Account extends Model
         'slug',
         'email',
     ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
+        'ssl'       => 'boolean',
+    ];
 }

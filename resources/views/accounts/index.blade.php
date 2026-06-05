@@ -81,12 +81,10 @@
         });
     });
 
-    document.querySelectorAll('.suspend-toggle').forEach(function (toggle) {
-        toggle.addEventListener('change', function () {
-            var label = this.checked ? 'Activating…' : 'Suspending…';
-            showOverlay(label);
-            this.closest('.suspend-form').submit();
-        });
+    document.addEventListener('change', function (e) {
+        if (!e.target.classList.contains('suspend-toggle')) return;
+        showOverlay(e.target.checked ? 'Activating…' : 'Suspending…');
+        e.target.closest('.suspend-form').submit();
     });
 </script>
 @endpush
