@@ -60,7 +60,22 @@ class AccountController extends Controller
 
     public function destroy(Account $account)
     {
-        //
+        $slug   = $account->slug;
+        $domain = $account->domain;
+        $sitesAvailable = "/etc/nginx/sites-available/{$domain}";
+        $sitesEnabled   = "/etc/nginx/sites-enabled/{$domain}";
+        $webRoot        = "/var/www/{$slug}";
+
+        $this->cmd(['sudo', 'rm', '-f', $sitesEnabled],  'Failed to remove site from sites-enabled.');
+        $this->cmd(['sudo', 'rm', '-f', $sitesAvailable], 'Failed to remove site from sites-available.');
+        $this->cmd(['sudo', 'nginx', '-t'],               'Nginx config test failed.');
+        $this->cmd(['sudo', 'systemctl', 'reload', 'nginx'], 'Failed to reload Nginx.');
+        $this->cmd(['sudo', 'rm', '-rf', $webRoot],       'Failed to remove web root.');
+        $this->cmd(['sudo', 'userdel', '-r', $slug],      'Failed to remove system user.');
+
+        $account->delete();
+
+        return redirect()->route('accounts.index')->with('success', "Account for {$domain} deleted.");
     }
 
     public function suspend(Account $account)
@@ -79,8 +94,11 @@ class AccountController extends Controller
         $this->cmd(['sudo', 'useradd', '-m', '-s', '/bin/bash', $slug],
             'Failed to create system user.');
 
-        $this->cmd(['sudo', 'mkdir', '-p', "{$webRoot}/public"],
+        $this->cmd(['sudo', 'mkdir', '-p', $webRoot],
             'Failed to create web root.');
+
+        $welcome = "<?php\necho '<h1>Welcome, {$domain}</h1>';\n";
+        Process::input($welcome)->run(['sudo', 'tee', "{$webRoot}/index.php"]);
 
         $this->cmd(['sudo', 'chown', '-R', "{$slug}:{$slug}", $webRoot],
             'Failed to set web root ownership.');
@@ -114,7 +132,7 @@ class AccountController extends Controller
         server {
             listen 80;
             server_name {$domain};
-            root {$webRoot}/public;
+            root {$webRoot};
 
             index index.php index.html;
 

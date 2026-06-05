@@ -30,6 +30,12 @@
                         <td>
                             <a href="{{ route('accounts.show', $account) }}" class="btn btn-sm btn-primary"><i class="bi bi-eye"></i></a>
                             <a href="{{ route('accounts.edit', $account) }}" class="btn btn-sm btn-secondary"><i class="bi bi-pencil"></i></a>
+                            <form action="{{ route('accounts.destroy', $account) }}" method="POST" class="d-inline"
+                                  onsubmit="return confirm('Delete {{ $account->domain }} and remove all server files?')">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-sm btn-danger"><i class="bi bi-trash"></i></button>
+                            </form>
                         </td>
                     </tr>
                 @endforeach
