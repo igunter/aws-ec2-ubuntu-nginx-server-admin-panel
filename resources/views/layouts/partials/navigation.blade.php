@@ -9,6 +9,11 @@
             <i class="bi bi-people"></i> Accounts
         </a>
     </li>
+    <li class="nav-item">
+        <a class="nav-link px-0 {{ request()->routeIs('users.*') ? 'active fw-semibold' : '' }}" href="{{ route('users.index') }}">
+            <i class="bi bi-person-gear"></i> Users
+        </a>
+    </li>
 </ul>
 
 <hr class="my-3">

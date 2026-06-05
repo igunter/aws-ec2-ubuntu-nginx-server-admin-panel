@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\GitController;
+use App\Http\Controllers\UserController;
 use App\Http\Controllers\HomeController;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
@@ -28,6 +29,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('accounts/{account}/suspend', [AccountController::class, 'suspend'])->name('accounts.suspend');
     Route::patch('accounts/{account}/ssl', [AccountController::class, 'toggleSsl'])->name('accounts.ssl.toggle');
     Route::resource('accounts', AccountController::class);
+    Route::resource('users', UserController::class)->except(['show']);
 
     Route::get('git/pull', [GitController::class, 'show'])->name('git.pull.show');
     Route::post('git/pull', [GitController::class, 'pull'])->name('git.pull');
