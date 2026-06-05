@@ -23,4 +23,5 @@ Auth::routes([
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/home', [HomeController::class, 'index']);
 
+Route::get('/git/pull', [GitController::class, 'show'])->name('git.pull.show')->middleware('auth');
 Route::post('/git/pull', [GitController::class, 'pull'])->name('git.pull')->middleware('auth');

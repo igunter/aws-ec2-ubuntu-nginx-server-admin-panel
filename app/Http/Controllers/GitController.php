@@ -9,6 +9,11 @@ class GitController extends Controller
         $this->middleware('auth');
     }
 
+    public function show()
+    {
+        return view('git.pull');
+    }
+
     public function pull()
     {
         $base = base_path();
@@ -53,6 +58,6 @@ class GitController extends Controller
             }
         }
 
-        return redirect()->route('home')->with('pull_results', $results);
+        return redirect()->route('git.pull.show')->with('pull_results', $results);
     }
 }
