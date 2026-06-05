@@ -61,10 +61,7 @@
 <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
 <script>
     $('#accounts-table').DataTable({
-        responsive: true,
-        order: [[ 0, "asc" ]],
-        lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
-        dom: 'lBfrtip',
+        order: [[0, 'asc']],
         pageLength: 25,
         columnDefs: [
             { orderable: false, searchable: false, targets: [2, -1] },
@@ -81,10 +78,12 @@
         });
     });
 
-    document.addEventListener('change', function (e) {
-        if (!e.target.classList.contains('suspend-toggle')) return;
-        showOverlay(e.target.checked ? 'Activating…' : 'Suspending…');
-        e.target.closest('.suspend-form').submit();
+    document.querySelectorAll('.suspend-toggle').forEach(function (toggle) {
+        toggle.addEventListener('change', function () {
+            var label = this.checked ? 'Activating…' : 'Suspending…';
+            showOverlay(label);
+            this.closest('.suspend-form').submit();
+        });
     });
 </script>
 @endpush
