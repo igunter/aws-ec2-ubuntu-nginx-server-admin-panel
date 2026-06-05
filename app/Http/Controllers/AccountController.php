@@ -50,12 +50,76 @@ class AccountController extends Controller
 
     public function edit(Account $account)
     {
-        //
+        return view('accounts.edit', compact('account'));
     }
 
     public function update(Request $request, Account $account)
     {
-        //
+        $request->validate([
+            'slug'   => ['required', 'string', 'max:32', 'regex:/^[a-z][a-z0-9-]*$/', 'unique:accounts,slug,' . $account->id],
+            'domain' => ['required', 'string', 'max:255', 'unique:accounts,domain,' . $account->id],
+            'email'  => ['nullable', 'string', 'email', 'max:255'],
+        ]);
+
+        $slugChanged   = $request->slug   !== $account->slug;
+        $domainChanged = $request->domain !== $account->domain;
+
+        if ($slugChanged || $domainChanged) {
+            try {
+                $this->updateServerAccount($account, $request->slug, $request->domain, $slugChanged, $domainChanged);
+            } catch (\RuntimeException $e) {
+                return back()->withInput()->with('error', $e->getMessage());
+            }
+        }
+
+        $account->update([
+            'slug'   => $request->slug,
+            'domain' => $request->domain,
+            'email'  => $request->email,
+            'ssl'    => $domainChanged ? false : $account->ssl,
+        ]);
+
+        return redirect()->route('accounts.show', $account)->with('success', 'Account updated.');
+    }
+
+    private function updateServerAccount(Account $account, string $newSlug, string $newDomain, bool $slugChanged, bool $domainChanged): void
+    {
+        $oldSlug   = $account->slug;
+        $oldDomain = $account->domain;
+        $oldWebRoot        = "/var/www/{$oldSlug}";
+        $newWebRoot        = "/var/www/{$newSlug}";
+        $oldSitesAvailable = "/etc/nginx/sites-available/{$oldDomain}";
+        $newSitesAvailable = "/etc/nginx/sites-available/{$newDomain}";
+        $oldSitesEnabled   = "/etc/nginx/sites-enabled/{$oldDomain}";
+        $newSitesEnabled   = "/etc/nginx/sites-enabled/{$newDomain}";
+
+        if ($slugChanged) {
+            $this->cmd(['sudo', 'mv', $oldWebRoot, $newWebRoot], 'Failed to rename web root.');
+            $this->cmd(['sudo', 'usermod', '-l', $newSlug, $oldSlug], 'Failed to rename system user.');
+            $this->cmd(['sudo', 'groupmod', '-n', $newSlug, $oldSlug], 'Failed to rename system group.');
+            $this->cmd(['sudo', 'usermod', '-d', $newWebRoot, $newSlug], 'Failed to update home directory.');
+            $this->cmd(['sudo', 'chown', '-R', "{$newSlug}:{$newSlug}", $newWebRoot], 'Failed to update web root ownership.');
+        }
+
+        $this->cmd(['sudo', 'rm', '-f', $oldSitesEnabled], 'Failed to remove old symlink.');
+
+        if ($domainChanged) {
+            $this->cmd(['sudo', 'rm', '-f', $oldSitesAvailable], 'Failed to remove old Nginx config.');
+
+            if ($account->ssl) {
+                $this->cmd(['sudo', 'certbot', 'delete', '--cert-name', $oldDomain, '--non-interactive'], 'Failed to remove old SSL certificate.');
+            }
+        }
+
+        $result = Process::input($this->nginxConfig($newDomain, $newWebRoot))
+            ->run(['sudo', 'tee', $newSitesAvailable]);
+        if (! $result->successful()) {
+            throw new \RuntimeException('Failed to write Nginx config. ' . trim($result->errorOutput()));
+        }
+
+        $this->cmd(['sudo', 'ln', '-sf', $newSitesAvailable, $newSitesEnabled], 'Failed to enable site.');
+        $this->cmd(['sudo', 'nginx', '-t'], 'Nginx config test failed.');
+        $this->cmd(['sudo', 'systemctl', 'reload', 'nginx'], 'Failed to reload Nginx.');
     }
 
     public function destroy(Account $account)
