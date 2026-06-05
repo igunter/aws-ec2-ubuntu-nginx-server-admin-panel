@@ -37,27 +37,4 @@
         @endif
     </div>
 </div>
-
-<div id="pull-overlay" class="d-none position-fixed top-0 start-0 w-100 h-100 align-items-center justify-content-center flex-column gap-3"
-     style="background:rgba(0,0,0,0.6);z-index:9999;">
-    <div class="spinner-border text-light" style="width:3rem;height:3rem;" role="status">
-        <span class="visually-hidden">Loading...</span>
-    </div>
-    <p class="text-white fw-semibold mb-0">Pulling updates&hellip;</p>
-</div>
-
-<script>
-    (function () {
-        var form = document.getElementById('git-pull-form');
-        if (!form) return;
-        form.addEventListener('submit', function (e) {
-            e.preventDefault();
-            if (!confirm('Pull latest changes from GitHub and run migrations?')) return;
-            var overlay = document.getElementById('pull-overlay');
-            overlay.classList.remove('d-none');
-            overlay.classList.add('d-flex');
-            form.submit();
-        });
-    })();
-</script>
 @endsection
