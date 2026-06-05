@@ -130,17 +130,27 @@ class AccountController extends Controller
         $activating = ! $account->is_active;
 
         try {
-            $config = $activating
-                ? $this->nginxConfig($account->domain, "/var/www/{$account->slug}")
-                : $this->suspendedNginxConfig($account->domain);
+            if ($activating) {
+                $config = $this->nginxConfig($account->domain, "/var/www/{$account->slug}");
+                $result = Process::input($config)->run(['sudo', 'tee', $sitesAvailable]);
+                if (! $result->successful()) {
+                    throw new \RuntimeException('Failed to restore Nginx config. ' . trim($result->errorOutput()));
+                }
+                $this->cmd(['sudo', 'nginx', '-t'], 'Nginx config test failed.');
+                $this->cmd(['sudo', 'systemctl', 'reload', 'nginx'], 'Failed to reload Nginx.');
 
-            $result = Process::input($config)->run(['sudo', 'tee', $sitesAvailable]);
-            if (! $result->successful()) {
-                throw new \RuntimeException('Failed to update Nginx config. ' . trim($result->errorOutput()));
+                if ($account->ssl) {
+                    $this->provisionSsl($account);
+                }
+            } else {
+                $config = $this->suspendedNginxConfig($account->domain, $account->ssl);
+                $result = Process::input($config)->run(['sudo', 'tee', $sitesAvailable]);
+                if (! $result->successful()) {
+                    throw new \RuntimeException('Failed to write suspended Nginx config. ' . trim($result->errorOutput()));
+                }
+                $this->cmd(['sudo', 'nginx', '-t'], 'Nginx config test failed.');
+                $this->cmd(['sudo', 'systemctl', 'reload', 'nginx'], 'Failed to reload Nginx.');
             }
-
-            $this->cmd(['sudo', 'nginx', '-t'], 'Nginx config test failed.');
-            $this->cmd(['sudo', 'systemctl', 'reload', 'nginx'], 'Failed to reload Nginx.');
         } catch (\RuntimeException $e) {
             return redirect()->route('accounts.index')->with('error', $e->getMessage());
         }
@@ -195,23 +205,34 @@ class AccountController extends Controller
         }
     }
 
-    private function suspendedNginxConfig(string $domain): string
+    private function suspendedNginxConfig(string $domain, bool $ssl = false): string
     {
+        $errorPage = "error_page 503 /503.html;\n            location = /503.html {\n                add_header Content-Type text/html;\n                return 503 '<!DOCTYPE html><html><head><title>Service Unavailable</title><style>body{font-family:sans-serif;text-align:center;padding:4rem}h1{font-size:3rem}p{color:#666}</style></head><body><h1>503</h1><p>This site is temporarily unavailable.</p></body></html>';\n            }";
+
+        $sslBlock = $ssl ? <<<NGINX
+
+        server {
+            listen 443 ssl;
+            server_name {$domain};
+            ssl_certificate /etc/letsencrypt/live/{$domain}/fullchain.pem;
+            ssl_certificate_key /etc/letsencrypt/live/{$domain}/privkey.pem;
+            include /etc/letsencrypt/options-ssl-nginx.conf;
+            ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+            location / { return 503; }
+            {$errorPage}
+        }
+        NGINX : '';
+
         return <<<NGINX
         server {
             listen 80;
             server_name {$domain};
 
-            location / {
-                return 503;
-            }
-
-            error_page 503 /503.html;
-            location = /503.html {
-                add_header Content-Type text/html;
-                return 503 '<!DOCTYPE html><html><head><title>Service Unavailable</title><style>body{font-family:sans-serif;text-align:center;padding:4rem}h1{font-size:3rem}p{color:#666}</style></head><body><h1>503</h1><p>This site is temporarily unavailable.</p></body></html>';
-            }
+            location / { return 503; }
+            {$errorPage}
         }
+        {$sslBlock}
         NGINX;
     }
 
