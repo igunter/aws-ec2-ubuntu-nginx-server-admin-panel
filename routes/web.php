@@ -17,7 +17,7 @@ try {
 
 Auth::routes([
     'register' => $enableRegistration,
-    'login'    => $enableLogin,
+    'login'    => true,
 ]);
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
