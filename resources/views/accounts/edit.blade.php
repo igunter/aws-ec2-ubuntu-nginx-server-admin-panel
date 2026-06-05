@@ -4,7 +4,8 @@
 <div class="card">
     <h5 class="card-header">
         {{ __('Edit Account') }}
-        <a href="{{ route('accounts.index') }}" class="btn btn-sm btn-primary float-end">List Accounts</a>
+        <a href="{{ route('accounts.index') }}" class="btn btn-sm btn-primary ms-2 float-end">List Accounts</a>
+        <a href="{{ route('accounts.show', $account) }}" class="btn btn-sm btn-primary ms-2 float-end">Account Details</a>
     </h5>
 
     <div class="card-body">
