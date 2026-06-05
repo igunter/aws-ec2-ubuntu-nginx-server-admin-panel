@@ -15,7 +15,8 @@ class GitController extends Controller
         $php  = PHP_BINARY;
 
         $steps = [
-            ['label' => 'git pull',        'cmd' => ['git', 'pull']],
+            ['label' => 'git fetch',        'cmd' => ['git', 'fetch', 'origin']],
+            ['label' => 'git reset',        'cmd' => ['git', 'reset', '--hard', 'origin/main']],
             ['label' => 'composer install', 'cmd' => ['composer', 'install', '--no-dev', '--optimize-autoloader', '--no-interaction']],
             ['label' => 'artisan migrate',  'cmd' => [$php, 'artisan', 'migrate', '--force', '--no-interaction']],
         ];
