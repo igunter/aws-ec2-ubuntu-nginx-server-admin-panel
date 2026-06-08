@@ -220,12 +220,19 @@ class AccountController extends Controller
             } catch (\RuntimeException) {}
         }
 
-        $this->cmd(['sudo', 'rm', '-f', $sitesEnabled],  'Failed to remove site from sites-enabled.');
-        $this->cmd(['sudo', 'rm', '-f', $sitesAvailable], 'Failed to remove site from sites-available.');
-        $this->cmd(['sudo', 'nginx', '-t'],               'Nginx config test failed.');
-        $this->cmd(['sudo', 'systemctl', 'reload', 'nginx'], 'Failed to reload Nginx.');
-        $this->cmd(['sudo', 'rm', '-rf', $webRoot],       'Failed to remove web root.');
-        $this->cmd(['sudo', 'userdel', '-r', $slug],      'Failed to remove system user.');
+        try {
+            $this->cmd(['sudo', 'rm', '-f', $sitesEnabled],  'Failed to remove site from sites-enabled.');
+            $this->cmd(['sudo', 'rm', '-f', $sitesAvailable], 'Failed to remove site from sites-available.');
+            $this->cmd(['sudo', 'nginx', '-t'],               'Nginx config test failed.');
+            $this->cmd(['sudo', 'systemctl', 'reload', 'nginx'], 'Failed to reload Nginx.');
+            $this->cmd(['sudo', 'rm', '-rf', $webRoot],       'Failed to remove web root.');
+
+            if (Process::run(['id', $slug])->successful()) {
+                $this->cmd(['sudo', 'userdel', '-r', $slug], 'Failed to remove system user.');
+            }
+        } catch (\RuntimeException $e) {
+            return redirect()->route('accounts.index')->with('error', $e->getMessage());
+        }
 
         $account->delete();
 
