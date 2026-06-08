@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\FtpAccount;
 use App\Models\User;
 
 return [
@@ -42,6 +43,11 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+
+        'ftp' => [
+            'driver' => 'session',
+            'provider' => 'ftp_accounts',
+        ],
     ],
 
     /*
@@ -65,6 +71,11 @@ return [
         'users' => [
             'driver' => 'eloquent',
             'model' => env('AUTH_MODEL', User::class),
+        ],
+
+        'ftp_accounts' => [
+            'driver' => 'eloquent',
+            'model' => FtpAccount::class,
         ],
 
         // 'users' => [

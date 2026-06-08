@@ -3,9 +3,9 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 
-class FtpAccount extends Model
+class FtpAccount extends Authenticatable
 {
     use HasUuids;
 
@@ -13,9 +13,30 @@ class FtpAccount extends Model
         'account_id',
         'username',
         'password',
+        'hashed_password',
         'root_directory',
         'is_active',
     ];
+
+    protected $hidden = [
+        'password',
+        'hashed_password',
+    ];
+
+    public function getAuthIdentifierName(): string
+    {
+        return 'username';
+    }
+
+    public function getAuthPassword(): string
+    {
+        return $this->hashed_password ?? '';
+    }
+
+    public function getRememberTokenName(): ?string
+    {
+        return null;
+    }
 
     public function account()
     {

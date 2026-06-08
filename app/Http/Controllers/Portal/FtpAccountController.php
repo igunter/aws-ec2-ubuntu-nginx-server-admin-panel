@@ -1,39 +1,49 @@
 <?php
-namespace App\Http\Controllers;
 
-use App\Models\Account;
+namespace App\Http\Controllers\Portal;
+
+use App\Http\Controllers\Controller;
 use App\Models\FtpAccount;
 use App\Services\FtpService;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Auth;
 
 class FtpAccountController extends Controller
 {
-    public function index()
+    private function account()
     {
-        $ftpAccounts = FtpAccount::with('account')->orderBy('username')->get();
+        return Auth::guard('ftp')->user()->account;
+    }
 
-        return view('ftp-accounts.index', compact('ftpAccounts'));
+    private function authorise(FtpAccount $ftpAccount): void
+    {
+        abort_if($ftpAccount->account_id !== $this->account()->id, 403);
     }
 
     public function create()
     {
-        $accounts = Account::orderBy('domain')->get();
+        $account = $this->account();
 
-        return view('ftp-accounts.create', compact('accounts'));
+        return view('portal.ftp-accounts.create', compact('account'));
     }
 
     public function store(Request $request)
     {
+        $account = $this->account();
+
+        $fullUsername = $request->input('username') . '@' . $account->domain;
+
         $validated = $request->validate([
-            'username'       => ['required', 'string', 'max:255', Rule::unique('ftp_accounts', 'username')->where('account_id', $request->account_id)],
-            'account_id'     => ['required', 'exists:accounts,id'],
+            'username'       => ['required', 'string', 'max:255'],
             'password'       => ['required', 'string', 'min:8'],
             'root_directory' => ['required', 'string', 'max:255'],
         ]);
 
-        $account  = Account::find($validated['account_id']);
-        $username = $validated['username'] . '@' . $account->domain;
+        if (FtpAccount::where('username', $fullUsername)->exists()) {
+            return back()->withInput()->withErrors(['username' => 'This FTP username already exists.']);
+        }
+
+        $username = $fullUsername;
         $ftpRoot  = '/var/www/' . $account->slug . $validated['root_directory'];
 
         try {
@@ -43,7 +53,7 @@ class FtpAccountController extends Controller
         }
 
         FtpAccount::create([
-            'account_id'      => $validated['account_id'],
+            'account_id'      => $account->id,
             'username'        => $username,
             'password'        => $validated['password'],
             'hashed_password' => bcrypt($validated['password']),
@@ -51,21 +61,22 @@ class FtpAccountController extends Controller
             'is_active'       => true,
         ]);
 
-        return redirect()->route('ftp-accounts.index')->with('success', 'FTP account created successfully.');
-    }
-
-    public function show(FtpAccount $ftpAccount)
-    {
-        //
+        return redirect()->route('portal.dashboard')->with('success', 'FTP account created successfully.');
     }
 
     public function edit(FtpAccount $ftpAccount)
     {
-        return view('ftp-accounts.edit', compact('ftpAccount'));
+        $this->authorise($ftpAccount);
+
+        $account = $this->account();
+
+        return view('portal.ftp-accounts.edit', compact('ftpAccount', 'account'));
     }
 
     public function update(Request $request, FtpAccount $ftpAccount)
     {
+        $this->authorise($ftpAccount);
+
         $validated = $request->validate([
             'password'       => ['nullable', 'string', 'min:8'],
             'root_directory' => ['required', 'string', 'max:255'],
@@ -83,7 +94,7 @@ class FtpAccountController extends Controller
             if ($deactivating) {
                 FtpService::deprovision($ftpAccount->username);
             } elseif ($isActive && ($activating || $passwordChanged || $rootChanged)) {
-                $account = $ftpAccount->account;
+                $account = $this->account();
                 $ftpRoot = '/var/www/' . $account->slug . $validated['root_directory'];
                 FtpService::provision($ftpAccount->username, $newPassword, $ftpRoot);
             }
@@ -103,26 +114,35 @@ class FtpAccountController extends Controller
 
         $ftpAccount->update($updateData);
 
-        return redirect()->route('ftp-accounts.index')->with('success', 'FTP account updated successfully.');
+        return redirect()->route('portal.dashboard')->with('success', 'FTP account updated successfully.');
     }
 
     public function destroy(FtpAccount $ftpAccount)
     {
+        $this->authorise($ftpAccount);
+
+        $currentUser = Auth::guard('ftp')->user();
+        if ($ftpAccount->id === $currentUser->id) {
+            return redirect()->route('portal.dashboard')->with('error', 'You cannot delete your own FTP account.');
+        }
+
         try {
             FtpService::deprovision($ftpAccount->username);
         } catch (\RuntimeException $e) {
-            return redirect()->route('ftp-accounts.index')->with('error', $e->getMessage());
+            return redirect()->route('portal.dashboard')->with('error', $e->getMessage());
         }
 
         $ftpAccount->delete();
 
-        return redirect()->route('ftp-accounts.index')->with('success', 'FTP account deleted successfully.');
+        return redirect()->route('portal.dashboard')->with('success', 'FTP account deleted successfully.');
     }
 
     public function suspend(FtpAccount $ftpAccount)
     {
+        $this->authorise($ftpAccount);
+
         $activating = ! $ftpAccount->is_active;
-        $account    = $ftpAccount->account;
+        $account    = $this->account();
         $ftpRoot    = '/var/www/' . $account->slug . $ftpAccount->root_directory;
 
         try {
@@ -132,39 +152,14 @@ class FtpAccountController extends Controller
                 FtpService::deprovision($ftpAccount->username);
             }
         } catch (\RuntimeException $e) {
-            return redirect()->route('ftp-accounts.index')->with('error', $e->getMessage());
+            return redirect()->route('portal.dashboard')->with('error', $e->getMessage());
         }
 
         $ftpAccount->is_active = $activating;
         $ftpAccount->save();
 
         $label = $activating ? 'activated' : 'suspended';
-        return redirect()->route('ftp-accounts.index')->with('success', "FTP account {$ftpAccount->username} {$label}.");
-    }
 
-    public function directories(Request $request)
-    {
-        $account = Account::findOrFail($request->account_id);
-        $webRoot = '/var/www/' . $account->slug;
-
-        $dirs = ['/'];
-
-        if (is_dir($webRoot)) {
-            $iterator = new \RecursiveIteratorIterator(
-                new \RecursiveDirectoryIterator($webRoot, \RecursiveDirectoryIterator::SKIP_DOTS),
-                \RecursiveIteratorIterator::SELF_FIRST
-            );
-            $iterator->setMaxDepth(2);
-
-            foreach ($iterator as $path) {
-                if ($path->isDir()) {
-                    $dirs[] = '/' . str_replace($webRoot . '/', '', $path->getPathname());
-                }
-            }
-
-            sort($dirs);
-        }
-
-        return response()->json($dirs);
+        return redirect()->route('portal.dashboard')->with('success', "FTP account {$ftpAccount->username} {$label}.");
     }
 }

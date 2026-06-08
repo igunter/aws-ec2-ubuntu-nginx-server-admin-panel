@@ -4,6 +4,7 @@ use App\Http\Controllers\AccountController;
 use App\Http\Controllers\FtpAccountController;
 use App\Http\Controllers\GitController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\Portal;
 use App\Http\Controllers\UserController;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
@@ -22,6 +23,20 @@ Auth::routes([
     'register' => $enableRegistration,
     'login'    => true,
 ]);
+
+Route::prefix('portal')->name('portal.')->group(function () {
+    Route::middleware('auth:ftp')->group(function () {
+        Route::post('logout', [Portal\LoginController::class, 'logout'])->name('logout');
+        Route::get('/', [Portal\DashboardController::class, 'index'])->name('dashboard');
+
+        Route::get('ftp-accounts/create', [Portal\FtpAccountController::class, 'create'])->name('ftp-accounts.create');
+        Route::post('ftp-accounts', [Portal\FtpAccountController::class, 'store'])->name('ftp-accounts.store');
+        Route::get('ftp-accounts/{ftpAccount}/edit', [Portal\FtpAccountController::class, 'edit'])->name('ftp-accounts.edit');
+        Route::patch('ftp-accounts/{ftpAccount}', [Portal\FtpAccountController::class, 'update'])->name('ftp-accounts.update');
+        Route::delete('ftp-accounts/{ftpAccount}', [Portal\FtpAccountController::class, 'destroy'])->name('ftp-accounts.destroy');
+        Route::patch('ftp-accounts/{ftpAccount}/suspend', [Portal\FtpAccountController::class, 'suspend'])->name('ftp-accounts.suspend');
+    });
+});
 
 Route::middleware('auth')->group(function () {
     Route::get('/', [HomeController::class, 'index'])->name('home');
