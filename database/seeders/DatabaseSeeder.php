@@ -23,7 +23,6 @@ class DatabaseSeeder extends Seeder
         $account = Account::create([
             'domain' => 'autoparel.co.uk',
             'slug'   => 'autoparel-co-uk',
-            'email'  => 'portal@autoparel.co.uk',
         ]);
 
         $passwordHash = bcrypt('P4$$w0rd');
@@ -38,7 +37,7 @@ class DatabaseSeeder extends Seeder
 
         User::create([
             'name'       => 'autoparel.co.uk',
-            'email'      => 'portal@autoparel.co.uk',
+            'email'      => 'root@autoparel.co.uk',
             'password'   => $passwordHash,
             'account_id' => $account->id,
         ]);

@@ -113,7 +113,7 @@ class AccountController extends Controller
             ]);
             User::create([
                 'name'       => $account->domain,
-                'email'      => $account->email ?? 'portal@' . $account->domain,
+                'email'      => $ftpUsername,
                 'password'   => $passwordHash,
                 'account_id' => $account->id,
             ]);
