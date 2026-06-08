@@ -60,12 +60,43 @@ class FtpAccountController extends Controller
 
     public function edit(FtpAccount $ftpAccount)
     {
-        //
+        return view('ftp-accounts.edit', compact('ftpAccount'));
     }
 
     public function update(Request $request, FtpAccount $ftpAccount)
     {
-        //
+        $validated = $request->validate([
+            'password'       => ['nullable', 'string', 'min:8'],
+            'root_directory' => ['required', 'string', 'max:255'],
+            'is_active'      => ['boolean'],
+        ]);
+
+        $isActive        = $request->boolean('is_active');
+        $passwordChanged = ! empty($validated['password']);
+        $rootChanged     = $validated['root_directory'] !== $ftpAccount->root_directory;
+        $deactivating    = ! $isActive && $ftpAccount->is_active;
+        $activating      = $isActive && ! $ftpAccount->is_active;
+        $newPassword     = $passwordChanged ? $validated['password'] : $ftpAccount->password;
+
+        try {
+            if ($deactivating) {
+                $this->deprovisionFtpAccount($ftpAccount->username);
+            } elseif ($isActive && ($activating || $passwordChanged || $rootChanged)) {
+                $account = $ftpAccount->account;
+                $ftpRoot = '/var/www/' . $account->slug . $validated['root_directory'];
+                $this->provisionFtpAccount($ftpAccount->username, $newPassword, $ftpRoot);
+            }
+        } catch (\RuntimeException $e) {
+            return back()->withInput()->with('error', $e->getMessage());
+        }
+
+        $ftpAccount->update([
+            'password'       => $newPassword,
+            'root_directory' => $validated['root_directory'],
+            'is_active'      => $isActive,
+        ]);
+
+        return redirect()->route('ftp-accounts.index')->with('success', 'FTP account updated successfully.');
     }
 
     public function destroy(FtpAccount $ftpAccount)
