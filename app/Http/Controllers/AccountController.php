@@ -339,11 +339,13 @@ class AccountController extends Controller
                 throw new \RuntimeException('Failed to create Laravel application. ' . trim($result->errorOutput()));
             }
 
-            // Copy .env and generate app key (skipped by --no-scripts)
+            // Copy .env and write app key (skipped by --no-scripts)
             if (! file_exists("{$webRoot}/.env")) {
                 copy("{$webRoot}/.env.example", "{$webRoot}/.env");
             }
-            Process::path($webRoot)->run(['php', 'artisan', 'key:generate', '--ansi']);
+            $key = 'base64:' . base64_encode(random_bytes(32));
+            $env = file_get_contents("{$webRoot}/.env");
+            file_put_contents("{$webRoot}/.env", str_replace('APP_KEY=', "APP_KEY={$key}", $env));
         } else {
             $welcome = "<?php\necho '<h1>Welcome, {$domain}</h1>';\n";
             $result = Process::input($welcome)->run(['sudo', 'tee', "{$webRoot}/index.php"]);
