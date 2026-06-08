@@ -112,9 +112,19 @@ class FtpAccountController extends Controller
         $dirs = ['/'];
 
         if (is_dir($webRoot)) {
-            foreach (glob($webRoot . '/*', GLOB_ONLYDIR) as $path) {
-                $dirs[] = '/' . basename($path);
+            $iterator = new \RecursiveIteratorIterator(
+                new \RecursiveDirectoryIterator($webRoot, \RecursiveDirectoryIterator::SKIP_DOTS),
+                \RecursiveIteratorIterator::SELF_FIRST
+            );
+            $iterator->setMaxDepth(2);
+
+            foreach ($iterator as $path) {
+                if ($path->isDir()) {
+                    $dirs[] = '/' . str_replace($webRoot . '/', '', $path->getPathname());
+                }
             }
+
+            sort($dirs);
         }
 
         return response()->json($dirs);
