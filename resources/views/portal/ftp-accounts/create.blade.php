@@ -15,12 +15,12 @@
                 <div class="input-group">
                     <input id="username" type="text" class="form-control @error('username') is-invalid @enderror"
                            name="username" value="{{ old('username') }}" required>
-                    <span class="input-group-text">@{{ $account->domain }}</span>
+                    <span class="input-group-text">{{ '@' . $account->domain }}</span>
                     @error('username')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
-                <div class="form-text">The FTP username will be <strong>your-name@{{ $account->domain }}</strong></div>
+                <div class="form-text">The FTP username will be <strong>your-name{{ '@' . $account->domain }}</strong></div>
             </div>
 
             <div class="mb-3">
@@ -34,9 +34,10 @@
 
             <div class="mb-3">
                 <label for="root_directory" class="form-label">Root Directory</label>
-                <input id="root_directory" type="text" class="form-control @error('root_directory') is-invalid @enderror"
-                       name="root_directory" value="{{ old('root_directory', '/') }}" required>
-                <div class="form-text">Path relative to your web root (e.g. <code>/</code> or <code>/public</code>)</div>
+                <select id="root_directory" name="root_directory" class="form-select @error('root_directory') is-invalid @enderror" required>
+                    <option value="/" {{ old('root_directory', $account->laravel ? '' : '/') === '/' ? 'selected' : '' }}>/  (full web root)</option>
+                    <option value="/public" {{ old('root_directory', $account->laravel ? '/public' : '') === '/public' ? 'selected' : '' }}>/public  (Laravel public folder)</option>
+                </select>
                 @error('root_directory')
                     <div class="invalid-feedback">{{ $message }}</div>
                 @enderror

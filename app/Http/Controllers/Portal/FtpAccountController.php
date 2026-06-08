@@ -36,7 +36,7 @@ class FtpAccountController extends Controller
         $validated = $request->validate([
             'username'       => ['required', 'string', 'max:255'],
             'password'       => ['required', 'string', 'min:8'],
-            'root_directory' => ['required', 'string', 'max:255'],
+            'root_directory' => ['required', 'in:/, /public'],
         ]);
 
         if (FtpAccount::where('username', $fullUsername)->exists()) {
@@ -79,7 +79,7 @@ class FtpAccountController extends Controller
 
         $validated = $request->validate([
             'password'       => ['nullable', 'string', 'min:8'],
-            'root_directory' => ['required', 'string', 'max:255'],
+            'root_directory' => ['required', 'in:/, /public'],
             'is_active'      => ['boolean'],
         ]);
 

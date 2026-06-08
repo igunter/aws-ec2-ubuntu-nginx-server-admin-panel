@@ -27,9 +27,10 @@
 
             <div class="mb-3">
                 <label for="root_directory" class="form-label">Root Directory</label>
-                <input id="root_directory" type="text" class="form-control @error('root_directory') is-invalid @enderror"
-                       name="root_directory" value="{{ old('root_directory', $ftpAccount->root_directory) }}" required>
-                <div class="form-text">Path relative to your web root (e.g. <code>/</code> or <code>/public</code>)</div>
+                <select id="root_directory" name="root_directory" class="form-select @error('root_directory') is-invalid @enderror" required>
+                    <option value="/" {{ old('root_directory', $ftpAccount->root_directory) === '/' ? 'selected' : '' }}>/  (full web root)</option>
+                    <option value="/public" {{ old('root_directory', $ftpAccount->root_directory) === '/public' ? 'selected' : '' }}>/public  (Laravel public folder)</option>
+                </select>
                 @error('root_directory')
                     <div class="invalid-feedback">{{ $message }}</div>
                 @enderror
