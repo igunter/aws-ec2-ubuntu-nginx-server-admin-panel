@@ -28,9 +28,10 @@ class AccountController extends Controller
         ]);
 
         $account = Account::create([
-            'slug'   => $request->slug,
-            'domain' => $request->domain,
-            'email'  => $request->email,
+            'slug'    => $request->slug,
+            'domain'  => $request->domain,
+            'email'   => $request->email,
+            'laravel' => $request->boolean('laravel'),
         ]);
 
         try {
@@ -121,7 +122,8 @@ class AccountController extends Controller
             }
         }
 
-        $result = Process::input($this->nginxConfig($newDomain, $newWebRoot))
+        $nginxRoot = $newWebRoot . ($account->laravel ? '/public' : '');
+        $result = Process::input($this->nginxConfig($newDomain, $nginxRoot))
             ->run(['sudo', 'tee', $newSitesAvailable]);
         if (! $result->successful()) {
             throw new \RuntimeException('Failed to write Nginx config. ' . trim($result->errorOutput()));
@@ -224,7 +226,8 @@ class AccountController extends Controller
 
         try {
             if ($activating) {
-                $config = $this->nginxConfig($account->domain, "/var/www/{$account->slug}");
+                $nginxRoot = "/var/www/{$account->slug}" . ($account->laravel ? '/public' : '');
+                $config = $this->nginxConfig($account->domain, $nginxRoot);
                 $result = Process::input($config)->run(['sudo', 'tee', $sitesAvailable]);
                 if (! $result->successful()) {
                     throw new \RuntimeException('Failed to restore Nginx config. ' . trim($result->errorOutput()));
@@ -258,7 +261,8 @@ class AccountController extends Controller
     {
         $slug   = $account->slug;
         $domain = $account->domain;
-        $webRoot = "/var/www/{$slug}";
+        $webRoot   = "/var/www/{$slug}";
+        $nginxRoot = $account->laravel ? "{$webRoot}/public" : $webRoot;
         $sitesAvailable = "/etc/nginx/sites-available/{$domain}";
         $sitesEnabled   = "/etc/nginx/sites-enabled/{$domain}";
 
@@ -268,16 +272,25 @@ class AccountController extends Controller
         $this->cmd(['sudo', 'mkdir', '-p', $webRoot],
             'Failed to create web root.');
 
-        $welcome = "<?php\necho '<h1>Welcome, {$domain}</h1>';\n";
-        $result = Process::input($welcome)->run(['sudo', 'tee', "{$webRoot}/index.php"]);
-        if (! $result->successful()) {
-            throw new \RuntimeException('Failed to create index.php. ' . trim($result->errorOutput()));
+        if ($account->laravel) {
+            $result = Process::timeout(300)->run([
+                'sudo', 'composer', 'create-project', 'laravel/laravel', $webRoot, '--no-interaction',
+            ]);
+            if (! $result->successful()) {
+                throw new \RuntimeException('Failed to create Laravel application. ' . trim($result->errorOutput()));
+            }
+        } else {
+            $welcome = "<?php\necho '<h1>Welcome, {$domain}</h1>';\n";
+            $result = Process::input($welcome)->run(['sudo', 'tee', "{$webRoot}/index.php"]);
+            if (! $result->successful()) {
+                throw new \RuntimeException('Failed to create index.php. ' . trim($result->errorOutput()));
+            }
         }
 
         $this->cmd(['sudo', 'chown', '-R', "{$slug}:{$slug}", $webRoot],
             'Failed to set web root ownership.');
 
-        Process::input($this->nginxConfig($domain, $webRoot))
+        Process::input($this->nginxConfig($domain, $nginxRoot))
             ->run(['sudo', 'tee', $sitesAvailable]);
 
         $this->cmd(['sudo', 'ln', '-sf', $sitesAvailable, $sitesEnabled],

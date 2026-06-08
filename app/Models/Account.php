@@ -12,6 +12,7 @@ class Account extends Model
     protected $fillable = [
         'is_active',
         'ssl',
+        'laravel',
         'domain',
         'slug',
         'email',
@@ -20,5 +21,6 @@ class Account extends Model
     protected $casts = [
         'is_active' => 'boolean',
         'ssl'       => 'boolean',
+        'laravel'   => 'boolean',
     ];
 }
