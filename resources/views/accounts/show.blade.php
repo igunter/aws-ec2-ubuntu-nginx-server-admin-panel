@@ -63,6 +63,53 @@
         </div>
     </div>
 </div>
+
+@if ($account->ftpAccounts->isNotEmpty())
+<div class="card mt-4">
+    <h5 class="card-header">
+        {{ __('FTP Accounts') }}
+    </h5>
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Root Directory</th>
+                    <th>Active</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($account->ftpAccounts as $ftpAccount)
+                    <tr>
+                        <td class="align-middle">{{ $ftpAccount->username }}</td>
+                        <td class="align-middle">{{ $ftpAccount->root_directory }}</td>
+                        <td class="align-middle">
+                            <form action="{{ route('ftp-accounts.suspend', $ftpAccount) }}" method="POST" class="suspend-form">
+                                @csrf
+                                @method('PATCH')
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input suspend-toggle" type="checkbox" role="switch"
+                                           {{ $ftpAccount->is_active ? 'checked' : '' }}>
+                                </div>
+                            </form>
+                        </td>
+                        <td class="align-middle text-end">
+                            <a href="{{ route('ftp-accounts.edit', $ftpAccount) }}" class="btn btn-sm btn-secondary"><i class="bi bi-pencil"></i></a>
+                            <form action="{{ route('ftp-accounts.destroy', $ftpAccount) }}" method="POST"
+                                  class="d-inline delete-form" data-username="{{ $ftpAccount->username }}">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-sm btn-danger"><i class="bi bi-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+</div>
+@endif
 @endsection
 
 @push('scripts')
@@ -75,6 +122,22 @@
     document.getElementById('ssl-toggle').addEventListener('change', function () {
         showOverlay(this.checked ? 'Enabling SSL…' : 'Disabling SSL…');
         document.getElementById('ssl-form').submit();
+    });
+
+    document.querySelectorAll('.suspend-toggle').forEach(function (toggle) {
+        toggle.addEventListener('change', function () {
+            showOverlay(this.checked ? 'Activating…' : 'Suspending…');
+            this.closest('.suspend-form').submit();
+        });
+    });
+
+    document.querySelectorAll('.delete-form').forEach(function (form) {
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            if (!confirm('Delete ' + form.dataset.username + '?')) return;
+            showOverlay('Deleting…');
+            form.submit();
+        });
     });
 </script>
 @endpush

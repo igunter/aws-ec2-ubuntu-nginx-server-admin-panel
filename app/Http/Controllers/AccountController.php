@@ -128,6 +128,8 @@ class AccountController extends Controller
 
     public function show(Account $account)
     {
+        $account->load(['ftpAccounts' => fn($q) => $q->orderBy('root_directory')]);
+
         return view('accounts.show', compact('account'));
     }
 
