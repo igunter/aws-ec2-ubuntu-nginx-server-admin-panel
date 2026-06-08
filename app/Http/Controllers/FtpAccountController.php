@@ -126,7 +126,7 @@ class FtpAccountController extends Controller
             throw new \RuntimeException('Failed to write FTP user config. ' . trim($result->errorOutput()));
         }
 
-        $this->cmd(['sudo', 'systemctl', 'reload', 'vsftpd'], 'Failed to reload vsftpd.');
+        $this->cmd(['sudo', 'systemctl', 'reload-or-restart', 'vsftpd'], 'Failed to reload vsftpd.');
     }
 
     private function deprovisionFtpAccount(string $username): void
@@ -141,7 +141,7 @@ class FtpAccountController extends Controller
             throw new \RuntimeException('Failed to update vsftpd passwd file. ' . trim($result->errorOutput()));
         }
 
-        $this->cmd(['sudo', 'systemctl', 'reload', 'vsftpd'], 'Failed to reload vsftpd.');
+        $this->cmd(['sudo', 'systemctl', 'reload-or-restart', 'vsftpd'], 'Failed to reload vsftpd.');
     }
 
     private function cmd(array $command, string $errorMessage): void
