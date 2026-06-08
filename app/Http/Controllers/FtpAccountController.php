@@ -104,6 +104,22 @@ class FtpAccountController extends Controller
         return redirect()->route('ftp-accounts.index')->with('success', "FTP account {$ftpAccount->username} {$label}.");
     }
 
+    public function directories(Request $request)
+    {
+        $account = Account::findOrFail($request->account_id);
+        $webRoot = '/var/www/' . $account->slug;
+
+        $dirs = [['value' => '/', 'label' => $webRoot]];
+
+        if (is_dir($webRoot)) {
+            foreach (glob($webRoot . '/*', GLOB_ONLYDIR) as $path) {
+                $dirs[] = ['value' => '/' . basename($path), 'label' => $path];
+            }
+        }
+
+        return response()->json($dirs);
+    }
+
     private function provisionFtpAccount(string $username, string $password, string $ftpRoot): void
     {
         $passwdFile  = '/etc/vsftpd/virtual_users.passwd';

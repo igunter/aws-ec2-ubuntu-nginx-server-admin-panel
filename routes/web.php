@@ -31,6 +31,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('accounts/{account}/ssl', [AccountController::class, 'toggleSsl'])->name('accounts.ssl.toggle');
     Route::resource('accounts', AccountController::class);
     
+    Route::get('ftp-accounts/directories', [FtpAccountController::class, 'directories'])->name('ftp-accounts.directories');
     Route::patch('ftp-accounts/{ftpAccount}/suspend', [FtpAccountController::class, 'suspend'])->name('ftp-accounts.suspend');
     Route::resource('ftp-accounts', FtpAccountController::class);
 

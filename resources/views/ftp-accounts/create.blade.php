@@ -41,7 +41,7 @@
                 <label for="laravel" class="col-sm-2 col-form-label">Root Directory</label>
                 <div class="col">
                     <select class="form-select" id="root_directory" name="root_directory">
-                        <option>/</option>
+                        <option value="/" selected>/</option>
                     </select>
                 </div>
                 @error('root_directory')
@@ -62,15 +62,30 @@
 
 @push('scripts')
 <script>
-    bindSlugAutofill('domain', 'slug');
+    function loadDirectories(accountId) {
+        var select = document.getElementById('root_directory');
+        select.innerHTML = '<option disabled>Loading…</option>';
+
+        fetch('{{ route('ftp-accounts.directories') }}?account_id=' + encodeURIComponent(accountId), {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (dirs) {
+            select.innerHTML = dirs.map(function (d) {
+                return '<option value="' + d.value + '">' + d.label + '</option>';
+            }).join('');
+        })
+        .catch(function () {
+            select.innerHTML = '<option value="/">/</option>';
+        });
+    }
+
+    var accountSelect = document.getElementById('account_id');
+    if (accountSelect.value) loadDirectories(accountSelect.value);
+    accountSelect.addEventListener('change', function () { loadDirectories(this.value); });
 
     document.querySelector('form').addEventListener('submit', function () {
-        var ssl = document.getElementById('ssl').checked;
-        var laravel = document.getElementById('laravel').checked;
-        var msg = 'Creating account…';
-        if (laravel) msg = 'Creating account and installing Laravel…';
-        else if (ssl) msg = 'Creating account and provisioning SSL…';
-        showOverlay(msg);
+        showOverlay('Creating FTP account…');
     });
 </script>
 @endpush
