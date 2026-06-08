@@ -60,5 +60,14 @@
 @push('scripts')
 <script>
     bindSlugAutofill('domain', 'slug');
+
+    document.querySelector('form').addEventListener('submit', function () {
+        var ssl = document.getElementById('ssl').checked;
+        var laravel = document.getElementById('laravel').checked;
+        var msg = 'Creating account…';
+        if (laravel) msg = 'Creating account and installing Laravel…';
+        else if (ssl) msg = 'Creating account and provisioning SSL…';
+        showOverlay(msg);
+    });
 </script>
 @endpush

@@ -44,5 +44,9 @@
 @push('scripts')
 <script>
     bindSlugAutofill('domain', 'slug');
+
+    document.querySelector('form').addEventListener('submit', function () {
+        showOverlay('Saving changes…');
+    });
 </script>
 @endpush
