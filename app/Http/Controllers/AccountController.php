@@ -334,10 +334,16 @@ class AccountController extends Controller
 
             $result = Process::timeout(300)
                 ->env(['COMPOSER_HOME' => '/tmp/composer-home'])
-                ->run(['composer', 'create-project', 'laravel/laravel', $webRoot, '--no-interaction']);
+                ->run(['composer', 'create-project', 'laravel/laravel', $webRoot, '--no-interaction', '--no-scripts']);
             if (! $result->successful()) {
                 throw new \RuntimeException('Failed to create Laravel application. ' . trim($result->errorOutput()));
             }
+
+            // Copy .env and generate app key (skipped by --no-scripts)
+            if (! file_exists("{$webRoot}/.env")) {
+                copy("{$webRoot}/.env.example", "{$webRoot}/.env");
+            }
+            Process::path($webRoot)->run(['php', 'artisan', 'key:generate', '--ansi']);
         } else {
             $welcome = "<?php\necho '<h1>Welcome, {$domain}</h1>';\n";
             $result = Process::input($welcome)->run(['sudo', 'tee', "{$webRoot}/index.php"]);
