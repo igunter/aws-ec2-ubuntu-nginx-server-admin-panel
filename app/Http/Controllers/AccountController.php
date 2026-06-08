@@ -355,6 +355,13 @@ class AccountController extends Controller
         $this->cmd(['sudo', 'chown', '-R', "{$slug}:{$slug}", $webRoot],
             'Failed to set web root ownership.');
 
+        if ($account->laravel) {
+            foreach (["{$webRoot}/storage", "{$webRoot}/bootstrap/cache"] as $dir) {
+                $this->cmd(['sudo', 'chown', '-R', "{$slug}:www-data", $dir], "Failed to set group ownership on {$dir}.");
+                $this->cmd(['sudo', 'chmod', '-R', '775', $dir], "Failed to set permissions on {$dir}.");
+            }
+        }
+
         Process::input($this->nginxConfig($domain, $nginxRoot))
             ->run(['sudo', 'tee', $sitesAvailable]);
 
