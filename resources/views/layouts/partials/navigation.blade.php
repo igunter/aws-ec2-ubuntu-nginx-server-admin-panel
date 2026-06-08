@@ -19,6 +19,14 @@
             <i class="bi bi-person-gear"></i> Users
         </a>
     </li>
+    <li>
+        <form method="POST" action="{{ route('logout') }}">
+            @csrf
+            <button type="submit" class="nav-link px-0 border-0 bg-transparent w-100 text-start">
+                <i class="bi bi-box-arrow-left"></i> Log Out
+            </button>
+        </form>
+    </li>
 </ul>
 
 <hr class="my-3">
