@@ -70,7 +70,15 @@ class FtpAccountController extends Controller
 
     public function destroy(FtpAccount $ftpAccount)
     {
-        //
+        try {
+            $this->deprovisionFtpAccount($ftpAccount->username);
+        } catch (\RuntimeException $e) {
+            return redirect()->route('ftp-accounts.index')->with('error', $e->getMessage());
+        }
+
+        $ftpAccount->delete();
+
+        return redirect()->route('ftp-accounts.index')->with('success', 'FTP account deleted successfully.');
     }
 
     public function suspend(FtpAccount $ftpAccount)
@@ -131,7 +139,8 @@ class FtpAccountController extends Controller
 
     private function deprovisionFtpAccount(string $username): void
     {
-        $passwdFile = '/etc/vsftpd/virtual_users.passwd';
+        $passwdFile  = '/etc/vsftpd/virtual_users.passwd';
+        $userConfDir = '/etc/vsftpd/user_conf';
 
         $current = @file_get_contents($passwdFile) ?: '';
         $lines   = array_filter(explode("\n", $current), fn($l) => trim($l) !== '' && ! str_starts_with($l, "{$username}:"));
@@ -141,6 +150,7 @@ class FtpAccountController extends Controller
             throw new \RuntimeException('Failed to update vsftpd passwd file. ' . trim($result->errorOutput()));
         }
 
+        $this->cmd(['sudo', 'rm', '-f', "{$userConfDir}/{$username}"], 'Failed to remove FTP user config.');
         $this->cmd(['sudo', 'systemctl', 'reload-or-restart', 'vsftpd'], 'Failed to reload vsftpd.');
     }
 
