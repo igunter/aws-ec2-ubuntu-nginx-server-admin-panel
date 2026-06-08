@@ -368,10 +368,9 @@ class AccountController extends Controller
             if (! $result->successful()) {
                 throw new \RuntimeException('Failed to copy .env.example. ' . trim($result->errorOutput()));
             }
-            $key = 'base64:' . base64_encode(random_bytes(32));
-            $result = Process::run(['sed', '-i', "s/APP_KEY=/APP_KEY={$key}/", "{$webRoot}/.env"]);
+            $result = Process::path($webRoot)->run(['php', 'artisan', 'key:generate', '--force']);
             if (! $result->successful()) {
-                throw new \RuntimeException('Failed to set APP_KEY. ' . trim($result->errorOutput()));
+                throw new \RuntimeException('Failed to generate app key. ' . trim($result->errorOutput()));
             }
 
             // Create SQLite database and migrate (skipped by --no-scripts)
