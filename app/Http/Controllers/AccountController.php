@@ -11,6 +11,60 @@ class AccountController extends Controller
     {
         $accounts = Account::all();
 
+        $fixes  = [];
+        $errors = [];
+
+        foreach ($accounts->filter(fn($a) => ! file_exists("/etc/nginx/sites-enabled/{$a->domain}")) as $account) {
+            $sitesAvailable = "/etc/nginx/sites-available/{$account->domain}";
+            $sitesEnabled   = "/etc/nginx/sites-enabled/{$account->domain}";
+
+            try {
+                if (! file_exists($sitesAvailable)) {
+                    $nginxRoot = "/var/www/{$account->slug}" . ($account->laravel ? '/public' : '');
+                    $config    = $account->is_active
+                        ? $this->nginxConfig($account->domain, $nginxRoot)
+                        : $this->suspendedNginxConfig($account->domain, $account->ssl);
+
+                    $result = Process::input($config)->run(['sudo', 'tee', $sitesAvailable]);
+                    if (! $result->successful()) {
+                        throw new \RuntimeException('Failed to write Nginx config. ' . trim($result->errorOutput()));
+                    }
+                }
+
+                $this->cmd(['sudo', 'ln', '-sf', $sitesAvailable, $sitesEnabled], 'Failed to enable site.');
+                $fixes[] = "Created sites-enabled for {$account->domain}";
+            } catch (\RuntimeException $e) {
+                $errors[] = $e->getMessage();
+            }
+        }
+
+        $enabledFiles = collect(glob('/etc/nginx/sites-enabled/*') ?: [])
+            ->map(fn($p) => basename($p))
+            ->reject(fn($n) => $n === 'default');
+
+        foreach ($enabledFiles->diff($accounts->pluck('domain')) as $name) {
+            try {
+                $this->cmd(['sudo', 'rm', '-f', "/etc/nginx/sites-enabled/{$name}"], "Failed to remove orphaned entry: {$name}.");
+                $fixes[] = "Removed orphaned sites-enabled: {$name}";
+            } catch (\RuntimeException $e) {
+                $errors[] = $e->getMessage();
+            }
+        }
+
+        if (! empty($fixes)) {
+            try {
+                $this->cmd(['sudo', 'nginx', '-t'], 'Nginx config test failed after auto-fix.');
+                $this->cmd(['sudo', 'systemctl', 'reload', 'nginx'], 'Failed to reload Nginx after auto-fix.');
+                session()->flash('success', implode('; ', $fixes));
+            } catch (\RuntimeException $e) {
+                $errors[] = $e->getMessage();
+            }
+        }
+
+        if (! empty($errors)) {
+            session()->flash('error', implode(' | ', $errors));
+        }
+
         return view('accounts.index', compact('accounts'));
     }
 
