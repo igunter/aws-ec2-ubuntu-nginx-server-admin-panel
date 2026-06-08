@@ -23,4 +23,9 @@ class Account extends Model
         'ssl'       => 'boolean',
         'laravel'   => 'boolean',
     ];
+
+    public function ftpAccounts()
+    {
+        return $this->hasMany(FtpAccount::class);
+    }
 }

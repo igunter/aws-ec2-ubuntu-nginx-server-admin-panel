@@ -1,9 +1,10 @@
 <?php
 
 use App\Http\Controllers\AccountController;
+use App\Http\Controllers\FtpAccountController;
 use App\Http\Controllers\GitController;
-use App\Http\Controllers\UserController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\UserController;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -29,9 +30,12 @@ Route::middleware('auth')->group(function () {
     Route::patch('accounts/{account}/suspend', [AccountController::class, 'suspend'])->name('accounts.suspend');
     Route::patch('accounts/{account}/ssl', [AccountController::class, 'toggleSsl'])->name('accounts.ssl.toggle');
     Route::resource('accounts', AccountController::class);
+    
+    Route::patch('ftp-accounts/{ftpAccount}/suspend', [FtpAccountController::class, 'suspend'])->name('ftp-accounts.suspend');
+    Route::resource('ftp-accounts', FtpAccountController::class);
+
     Route::resource('users', UserController::class)->except(['show']);
 
     Route::get('git/pull', [GitController::class, 'show'])->name('git.pull.show');
     Route::post('git/pull', [GitController::class, 'pull'])->name('git.pull');
 });
-
