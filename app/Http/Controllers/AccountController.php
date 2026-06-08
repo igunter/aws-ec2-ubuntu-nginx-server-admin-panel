@@ -102,11 +102,12 @@ class AccountController extends Controller
         try {
             FtpService::provision($ftpUsername, $request->ftp_password, '/var/www/' . $account->slug);
             FtpAccount::create([
-                'account_id'     => $account->id,
-                'username'       => $ftpUsername,
-                'password'       => $request->ftp_password,
-                'root_directory' => '/',
-                'is_active'      => true,
+                'account_id'      => $account->id,
+                'username'        => $ftpUsername,
+                'password'        => $request->ftp_password,
+                'hashed_password' => bcrypt($request->ftp_password),
+                'root_directory'  => '/',
+                'is_active'       => true,
             ]);
         } catch (\RuntimeException $e) {
             return redirect()->route('accounts.index')
