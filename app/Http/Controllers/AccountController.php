@@ -346,6 +346,10 @@ class AccountController extends Controller
             $key = 'base64:' . base64_encode(random_bytes(32));
             $env = file_get_contents("{$webRoot}/.env");
             file_put_contents("{$webRoot}/.env", str_replace('APP_KEY=', "APP_KEY={$key}", $env));
+
+            // Create SQLite database and migrate (skipped by --no-scripts)
+            touch("{$webRoot}/database/database.sqlite");
+            Process::path($webRoot)->timeout(60)->run(['php', 'artisan', 'migrate', '--force']);
         } else {
             $welcome = "<?php\necho '<h1>Welcome, {$domain}</h1>';\n";
             $result = Process::input($welcome)->run(['sudo', 'tee', "{$webRoot}/index.php"]);
@@ -358,7 +362,7 @@ class AccountController extends Controller
             'Failed to set web root ownership.');
 
         if ($account->laravel) {
-            foreach (["{$webRoot}/storage", "{$webRoot}/bootstrap/cache"] as $dir) {
+            foreach (["{$webRoot}/storage", "{$webRoot}/bootstrap/cache", "{$webRoot}/database"] as $dir) {
                 $this->cmd(['sudo', 'chown', '-R', "{$slug}:www-data", $dir], "Failed to set group ownership on {$dir}.");
                 $this->cmd(['sudo', 'chmod', '-R', '775', $dir], "Failed to set permissions on {$dir}.");
             }
