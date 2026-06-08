@@ -375,14 +375,14 @@ class AccountController extends Controller
             if (! $result->successful()) {
                 throw new \RuntimeException('Failed to copy .env.example. ' . trim($result->errorOutput()));
             }
-            $result = Process::path($webRoot)->run(['sudo', 'php', 'artisan', 'key:generate', '--force']);
+            $result = Process::run(['sudo', 'php', "{$webRoot}/artisan", 'key:generate', '--force']);
             if (! $result->successful()) {
                 throw new \RuntimeException('Failed to generate app key. ' . trim($result->errorOutput()));
             }
 
             // Create SQLite database and migrate (skipped by --no-scripts)
             $this->cmd(['sudo', 'touch', "{$webRoot}/database/database.sqlite"], 'Failed to create SQLite database.');
-            Process::path($webRoot)->timeout(60)->run(['sudo', 'php', 'artisan', 'migrate', '--force']);
+            Process::run(['sudo', 'php', "{$webRoot}/artisan", 'migrate', '--force']);
 
             // Install npm dependencies to generate package-lock.json
             Process::path($webRoot)->timeout(300)->run(['npm', 'install', '--no-audit', '--no-fund']);
