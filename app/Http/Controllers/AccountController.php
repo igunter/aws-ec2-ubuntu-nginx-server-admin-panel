@@ -2,6 +2,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Account;
+use App\Models\FtpAccount;
+use App\Services\FtpService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Process;
 
@@ -76,9 +78,10 @@ class AccountController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'slug'   => ['required', 'string', 'max:32', 'regex:/^[a-z][a-z0-9-]*$/', 'unique:accounts'],
-            'domain' => ['required', 'string', 'max:255', 'unique:accounts'],
-            'email'  => ['nullable', 'string', 'email', 'max:255'],
+            'slug'         => ['required', 'string', 'max:32', 'regex:/^[a-z][a-z0-9-]*$/', 'unique:accounts'],
+            'domain'       => ['required', 'string', 'max:255', 'unique:accounts'],
+            'email'        => ['nullable', 'string', 'email', 'max:255'],
+            'ftp_password' => ['required', 'string', 'min:8'],
         ]);
 
         $account = Account::create([
@@ -93,6 +96,21 @@ class AccountController extends Controller
         } catch (\RuntimeException $e) {
             $account->delete();
             return back()->withInput()->with('error', $e->getMessage());
+        }
+
+        $ftpUsername = 'root@' . $account->domain;
+        try {
+            FtpService::provision($ftpUsername, $request->ftp_password, '/var/www/' . $account->slug);
+            FtpAccount::create([
+                'account_id'     => $account->id,
+                'username'       => $ftpUsername,
+                'password'       => $request->ftp_password,
+                'root_directory' => '/',
+                'is_active'      => true,
+            ]);
+        } catch (\RuntimeException $e) {
+            return redirect()->route('accounts.index')
+                ->with('warning', "Account created but FTP setup failed: {$e->getMessage()}");
         }
 
         if ($request->boolean('ssl')) {
@@ -195,6 +213,12 @@ class AccountController extends Controller
         $sitesAvailable = "/etc/nginx/sites-available/{$domain}";
         $sitesEnabled   = "/etc/nginx/sites-enabled/{$domain}";
         $webRoot        = "/var/www/{$slug}";
+
+        foreach ($account->ftpAccounts as $ftpAccount) {
+            try {
+                FtpService::deprovision($ftpAccount->username);
+            } catch (\RuntimeException) {}
+        }
 
         $this->cmd(['sudo', 'rm', '-f', $sitesEnabled],  'Failed to remove site from sites-enabled.');
         $this->cmd(['sudo', 'rm', '-f', $sitesAvailable], 'Failed to remove site from sites-available.');

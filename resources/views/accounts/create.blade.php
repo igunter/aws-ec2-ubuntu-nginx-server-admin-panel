@@ -30,6 +30,17 @@
                 </div>
             </div>
             <div class="row mb-3">
+                <label for="ftp_password" class="col-sm-2 col-form-label">FTP Password</label>
+                <div class="col">
+                    <input type="password" class="form-control @error('ftp_password') is-invalid @enderror"
+                           id="ftp_password" name="ftp_password" placeholder="FTP root account password">
+                    <div class="form-text text-muted">Creates an FTP account as root@{{ request()->domain ?? 'domain' }} with full access to the account folder.</div>
+                    @error('ftp_password')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+            </div>
+            <div class="row mb-3">
                 <label for="ssl" class="col-sm-2 col-form-label">SSL</label>
                 <div class="col">
                     <div class="form-check form-switch mt-2">

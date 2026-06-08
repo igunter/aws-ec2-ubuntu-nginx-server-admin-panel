@@ -3,8 +3,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Account;
 use App\Models\FtpAccount;
+use App\Services\FtpService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Process;
 use Illuminate\Validation\Rule;
 
 class FtpAccountController extends Controller
@@ -37,7 +37,7 @@ class FtpAccountController extends Controller
         $ftpRoot  = '/var/www/' . $account->slug . $validated['root_directory'];
 
         try {
-            $this->provisionFtpAccount($username, $validated['password'], $ftpRoot);
+            FtpService::provision($username, $validated['password'], $ftpRoot);
         } catch (\RuntimeException $e) {
             return back()->withInput()->with('error', $e->getMessage());
         }
@@ -80,11 +80,11 @@ class FtpAccountController extends Controller
 
         try {
             if ($deactivating) {
-                $this->deprovisionFtpAccount($ftpAccount->username);
+                FtpService::deprovision($ftpAccount->username);
             } elseif ($isActive && ($activating || $passwordChanged || $rootChanged)) {
                 $account = $ftpAccount->account;
                 $ftpRoot = '/var/www/' . $account->slug . $validated['root_directory'];
-                $this->provisionFtpAccount($ftpAccount->username, $newPassword, $ftpRoot);
+                FtpService::provision($ftpAccount->username, $newPassword, $ftpRoot);
             }
         } catch (\RuntimeException $e) {
             return back()->withInput()->with('error', $e->getMessage());
@@ -102,7 +102,7 @@ class FtpAccountController extends Controller
     public function destroy(FtpAccount $ftpAccount)
     {
         try {
-            $this->deprovisionFtpAccount($ftpAccount->username);
+            FtpService::deprovision($ftpAccount->username);
         } catch (\RuntimeException $e) {
             return redirect()->route('ftp-accounts.index')->with('error', $e->getMessage());
         }
@@ -120,9 +120,9 @@ class FtpAccountController extends Controller
 
         try {
             if ($activating) {
-                $this->provisionFtpAccount($ftpAccount->username, $ftpAccount->password, $ftpRoot);
+                FtpService::provision($ftpAccount->username, $ftpAccount->password, $ftpRoot);
             } else {
-                $this->deprovisionFtpAccount($ftpAccount->username);
+                FtpService::deprovision($ftpAccount->username);
             }
         } catch (\RuntimeException $e) {
             return redirect()->route('ftp-accounts.index')->with('error', $e->getMessage());
@@ -159,63 +159,5 @@ class FtpAccountController extends Controller
         }
 
         return response()->json($dirs);
-    }
-
-    private function provisionFtpAccount(string $username, string $password, string $ftpRoot): void
-    {
-        $passwdFile  = '/etc/vsftpd/virtual_users.passwd';
-        $userConfDir = '/etc/vsftpd/user_conf';
-
-        $this->cmd(['sudo', 'mkdir', '-p', dirname($passwdFile)], 'Failed to create vsftpd directory.');
-        $this->cmd(['sudo', 'mkdir', '-p', $userConfDir], 'Failed to create vsftpd user_conf directory.');
-
-        // Read current content; file_get_contents works after first provision sets root:www-data 640
-        $current = @file_get_contents($passwdFile) ?: '';
-
-        // Build updated content: remove existing entry for this user, append new hash
-        $hash  = password_hash($password, PASSWORD_BCRYPT);
-        $lines = array_filter(explode("\n", $current), fn($l) => trim($l) !== '' && ! str_starts_with($l, "{$username}:"));
-        $lines[] = "{$username}:{$hash}";
-
-        $result = Process::input(implode("\n", $lines) . "\n")->run(['sudo', 'tee', $passwdFile]);
-        if (! $result->successful()) {
-            throw new \RuntimeException('Failed to write vsftpd passwd file. ' . trim($result->errorOutput()));
-        }
-
-        // root:www-data 640 so www-data can read the file for future updates without sudo cat
-        $this->cmd(['sudo', 'chown', 'root:www-data', $passwdFile], 'Failed to set vsftpd passwd file ownership.');
-        $this->cmd(['sudo', 'chmod', '640', $passwdFile], 'Failed to set vsftpd passwd file permissions.');
-
-        $result = Process::input("local_root={$ftpRoot}\n")->run(['sudo', 'tee', "{$userConfDir}/{$username}"]);
-        if (! $result->successful()) {
-            throw new \RuntimeException('Failed to write FTP user config. ' . trim($result->errorOutput()));
-        }
-
-        $this->cmd(['sudo', 'systemctl', 'reload-or-restart', 'vsftpd'], 'Failed to reload vsftpd.');
-    }
-
-    private function deprovisionFtpAccount(string $username): void
-    {
-        $passwdFile  = '/etc/vsftpd/virtual_users.passwd';
-        $userConfDir = '/etc/vsftpd/user_conf';
-
-        $current = @file_get_contents($passwdFile) ?: '';
-        $lines   = array_filter(explode("\n", $current), fn($l) => trim($l) !== '' && ! str_starts_with($l, "{$username}:"));
-
-        $result = Process::input(implode("\n", $lines) . "\n")->run(['sudo', 'tee', $passwdFile]);
-        if (! $result->successful()) {
-            throw new \RuntimeException('Failed to update vsftpd passwd file. ' . trim($result->errorOutput()));
-        }
-
-        $this->cmd(['sudo', 'rm', '-f', "{$userConfDir}/{$username}"], 'Failed to remove FTP user config.');
-        $this->cmd(['sudo', 'systemctl', 'reload-or-restart', 'vsftpd'], 'Failed to reload vsftpd.');
-    }
-
-    private function cmd(array $command, string $errorMessage): void
-    {
-        $result = Process::run($command);
-        if (! $result->successful()) {
-            throw new \RuntimeException($errorMessage . ' ' . trim($result->errorOutput()));
-        }
     }
 }
