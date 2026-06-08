@@ -24,7 +24,7 @@
             <tbody>
                 @foreach ($accounts as $account)
                     <tr>
-                        <td>{{ $account->domain }}</td>
+                        <td><a href="http://{{ $account->domain }}" target="_blank">{{ $account->domain }}</a></td>
                         <td class="d-none d-md-table-cell">{{ $account->slug }}</td>
                         <td>
                             <form action="{{ route('accounts.suspend', $account) }}" method="POST" class="suspend-form">

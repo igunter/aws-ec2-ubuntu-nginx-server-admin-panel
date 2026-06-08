@@ -32,7 +32,7 @@
         <div class="row mb-3">
             <label class="col-sm-2 col-form-label fw-bold">Domain</label>
             <div class="col">
-                <p class="form-control-plaintext">{{ $account->domain }}</p>
+                <p class="form-control-plaintext"><a href="https://{{ $account->domain }}" target="_blank">{{ $account->domain }}</a></p>
             </div>
         </div>
         <div class="row mb-3">
