@@ -3,6 +3,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Account;
 use App\Models\FtpAccount;
+use App\Models\User;
 use App\Services\FtpService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Process;
@@ -98,16 +99,23 @@ class AccountController extends Controller
             return back()->withInput()->with('error', $e->getMessage());
         }
 
-        $ftpUsername = 'root@' . $account->domain;
+        $ftpUsername  = 'root@' . $account->domain;
+        $passwordHash = bcrypt($request->ftp_password);
+
         try {
-            FtpService::provision($ftpUsername, $request->ftp_password, '/var/www/' . $account->slug);
+            FtpService::provision($ftpUsername, $passwordHash, '/var/www/' . $account->slug);
             FtpAccount::create([
-                'account_id'      => $account->id,
-                'username'        => $ftpUsername,
-                'password'        => $request->ftp_password,
-                'hashed_password' => bcrypt($request->ftp_password),
-                'root_directory'  => '/',
-                'is_active'       => true,
+                'account_id'     => $account->id,
+                'username'       => $ftpUsername,
+                'password'       => $passwordHash,
+                'root_directory' => '/',
+                'is_active'      => true,
+            ]);
+            User::create([
+                'name'       => $account->domain,
+                'email'      => $account->email ?? 'portal@' . $account->domain,
+                'password'   => $passwordHash,
+                'account_id' => $account->id,
             ]);
         } catch (\RuntimeException $e) {
             return redirect()->route('accounts.index')

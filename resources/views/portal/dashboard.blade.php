@@ -84,16 +84,14 @@
                             <a href="{{ route('portal.ftp-accounts.edit', $ftp) }}" class="btn btn-sm btn-secondary">
                                 <i class="bi bi-pencil"></i>
                             </a>
-                            @if ($ftp->id !== $ftpAccount->id)
-                                <form action="{{ route('portal.ftp-accounts.destroy', $ftp) }}" method="POST"
-                                      class="d-inline delete-form" data-username="{{ $ftp->username }}">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-danger">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </form>
-                            @endif
+                            <form action="{{ route('portal.ftp-accounts.destroy', $ftp) }}" method="POST"
+                                  class="d-inline delete-form" data-username="{{ $ftp->username }}">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-sm btn-danger">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
                         </td>
                     </tr>
                 @empty

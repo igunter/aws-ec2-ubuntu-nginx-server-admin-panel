@@ -12,7 +12,7 @@ class FtpAccountController extends Controller
 {
     private function account()
     {
-        return Auth::guard('ftp')->user()->account;
+        return Auth::user()->account;
     }
 
     private function authorise(FtpAccount $ftpAccount): void
@@ -114,11 +114,6 @@ class FtpAccountController extends Controller
     public function destroy(FtpAccount $ftpAccount)
     {
         $this->authorise($ftpAccount);
-
-        $currentUser = Auth::guard('ftp')->user();
-        if ($ftpAccount->id === $currentUser->id) {
-            return redirect()->route('portal.dashboard')->with('error', 'You cannot delete your own FTP account.');
-        }
 
         try {
             FtpService::deprovision($ftpAccount->username);

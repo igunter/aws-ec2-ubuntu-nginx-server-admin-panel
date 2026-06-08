@@ -17,9 +17,9 @@
             <a class="navbar-brand" href="{{ route('portal.dashboard') }}">
                 {{ config('app.name', 'Laravel') }} &mdash; Client Portal
             </a>
-            @auth('ftp')
+            @auth
             <div class="navbar-nav ms-auto">
-                <span class="nav-item nav-link text-muted">{{ Auth::guard('ftp')->user()->username }}</span>
+                <span class="nav-item nav-link text-muted">{{ Auth::user()->name }}</span>
                 <form action="{{ route('portal.logout') }}" method="POST" class="d-inline">
                     @csrf
                     <button type="submit" class="btn btn-sm btn-outline-secondary ms-2">Logout</button>

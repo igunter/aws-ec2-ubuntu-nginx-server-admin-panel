@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Models\FtpAccount;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 
@@ -27,5 +29,10 @@ class Account extends Model
     public function ftpAccounts()
     {
         return $this->hasMany(FtpAccount::class);
+    }
+
+    public function portalUser()
+    {
+        return $this->hasOne(User::class);
     }
 }

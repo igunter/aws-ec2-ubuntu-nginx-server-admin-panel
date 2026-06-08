@@ -38,16 +38,12 @@ class LoginController extends Controller
 
         $remember = $request->boolean('remember');
 
-        if (Auth::guard('web')->attempt(['email' => $request->credential, 'password' => $request->password], $remember)) {
+        if (Auth::attempt(['email' => $request->credential, 'password' => $request->password], $remember)) {
             $request->session()->regenerate();
             $this->clearLoginAttempts($request);
-            return redirect()->intended($this->redirectTo);
-        }
 
-        if (Auth::guard('ftp')->attempt(['username' => $request->credential, 'password' => $request->password], $remember)) {
-            $request->session()->regenerate();
-            $this->clearLoginAttempts($request);
-            return redirect()->intended(route('portal.dashboard'));
+            $redirectTo = Auth::user()->account_id ? route('portal.dashboard') : $this->redirectTo;
+            return redirect()->intended($redirectTo);
         }
 
         $this->incrementLoginAttempts($request);

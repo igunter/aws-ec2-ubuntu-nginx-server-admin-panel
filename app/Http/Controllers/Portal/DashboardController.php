@@ -9,10 +9,9 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        $ftpAccount = Auth::guard('ftp')->user();
-        $account    = $ftpAccount->account;
+        $account = Auth::user()->account;
         $account->load('ftpAccounts');
 
-        return view('portal.dashboard', compact('account', 'ftpAccount'));
+        return view('portal.dashboard', compact('account'));
     }
 }

@@ -25,7 +25,7 @@ Auth::routes([
 ]);
 
 Route::prefix('portal')->name('portal.')->group(function () {
-    Route::middleware('auth:ftp')->group(function () {
+    Route::middleware(['auth', 'portal'])->group(function () {
         Route::post('logout', [Portal\LoginController::class, 'logout'])->name('logout');
         Route::get('/', [Portal\DashboardController::class, 'index'])->name('dashboard');
 
@@ -38,7 +38,7 @@ Route::prefix('portal')->name('portal.')->group(function () {
     });
 });
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/', [HomeController::class, 'index'])->name('home');
     Route::get('home', [HomeController::class, 'index']);
 
