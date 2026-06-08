@@ -109,11 +109,11 @@ class FtpAccountController extends Controller
         $account = Account::findOrFail($request->account_id);
         $webRoot = '/var/www/' . $account->slug;
 
-        $dirs = [['value' => '/', 'label' => $webRoot]];
+        $dirs = ['/'];
 
         if (is_dir($webRoot)) {
             foreach (glob($webRoot . '/*', GLOB_ONLYDIR) as $path) {
-                $dirs[] = ['value' => '/' . basename($path), 'label' => $path];
+                $dirs[] = '/' . basename($path);
             }
         }
 

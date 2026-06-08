@@ -72,7 +72,7 @@
         .then(function (r) { return r.json(); })
         .then(function (dirs) {
             select.innerHTML = dirs.map(function (d) {
-                return '<option value="' + d.value + '">' + d.label + '</option>';
+                return '<option value="' + d + '">' + d + '</option>';
             }).join('');
         })
         .catch(function () {
