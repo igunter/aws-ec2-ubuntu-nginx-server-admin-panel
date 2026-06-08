@@ -104,19 +104,24 @@ class FtpAccountController extends Controller
         $this->cmd(['sudo', 'mkdir', '-p', dirname($passwdFile)], 'Failed to create vsftpd directory.');
         $this->cmd(['sudo', 'mkdir', '-p', $userConfDir], 'Failed to create vsftpd user_conf directory.');
 
-        // Ensure the passwd file exists and is secured
-        if (! file_exists($passwdFile)) {
-            $this->cmd(['sudo', 'touch', $passwdFile], 'Failed to create vsftpd passwd file.');
-            $this->cmd(['sudo', 'chmod', '600', $passwdFile], 'Failed to set vsftpd passwd file permissions.');
-        }
+        // Read current content; file_get_contents works after first provision sets root:www-data 640
+        $current = @file_get_contents($passwdFile) ?: '';
 
-        $result = Process::run(['sudo', 'htpasswd', '-b', $passwdFile, $username, $password]);
+        // Build updated content: remove existing entry for this user, append new hash
+        $hash  = password_hash($password, PASSWORD_BCRYPT);
+        $lines = array_filter(explode("\n", $current), fn($l) => trim($l) !== '' && ! str_starts_with($l, "{$username}:"));
+        $lines[] = "{$username}:{$hash}";
+
+        $result = Process::input(implode("\n", $lines) . "\n")->run(['sudo', 'tee', $passwdFile]);
         if (! $result->successful()) {
-            throw new \RuntimeException('Failed to add FTP user. ' . trim($result->errorOutput()));
+            throw new \RuntimeException('Failed to write vsftpd passwd file. ' . trim($result->errorOutput()));
         }
 
-        $userConf = "local_root={$ftpRoot}\n";
-        $result   = Process::input($userConf)->run(['sudo', 'tee', "{$userConfDir}/{$username}"]);
+        // root:www-data 640 so www-data can read the file for future updates without sudo cat
+        $this->cmd(['sudo', 'chown', 'root:www-data', $passwdFile], 'Failed to set vsftpd passwd file ownership.');
+        $this->cmd(['sudo', 'chmod', '640', $passwdFile], 'Failed to set vsftpd passwd file permissions.');
+
+        $result = Process::input("local_root={$ftpRoot}\n")->run(['sudo', 'tee', "{$userConfDir}/{$username}"]);
         if (! $result->successful()) {
             throw new \RuntimeException('Failed to write FTP user config. ' . trim($result->errorOutput()));
         }
@@ -128,7 +133,14 @@ class FtpAccountController extends Controller
     {
         $passwdFile = '/etc/vsftpd/virtual_users.passwd';
 
-        $this->cmd(['sudo', 'htpasswd', '-D', $passwdFile, $username], 'Failed to remove FTP user from passwd file.');
+        $current = @file_get_contents($passwdFile) ?: '';
+        $lines   = array_filter(explode("\n", $current), fn($l) => trim($l) !== '' && ! str_starts_with($l, "{$username}:"));
+
+        $result = Process::input(implode("\n", $lines) . "\n")->run(['sudo', 'tee', $passwdFile]);
+        if (! $result->successful()) {
+            throw new \RuntimeException('Failed to update vsftpd passwd file. ' . trim($result->errorOutput()));
+        }
+
         $this->cmd(['sudo', 'systemctl', 'reload', 'vsftpd'], 'Failed to reload vsftpd.');
     }
 
