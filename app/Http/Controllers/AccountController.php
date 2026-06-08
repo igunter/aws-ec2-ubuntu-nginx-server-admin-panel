@@ -329,9 +329,12 @@ class AccountController extends Controller
             'Failed to create web root.');
 
         if ($account->laravel) {
-            $result = Process::timeout(300)->run([
-                'sudo', 'composer', 'create-project', 'laravel/laravel', $webRoot, '--no-interaction',
-            ]);
+            // Give www-data temporary ownership so composer can write without sudo
+            $this->cmd(['sudo', 'chown', 'www-data:www-data', $webRoot], 'Failed to set web root ownership for composer.');
+
+            $result = Process::timeout(300)
+                ->env(['COMPOSER_HOME' => '/tmp/composer-home'])
+                ->run(['composer', 'create-project', 'laravel/laravel', $webRoot, '--no-interaction']);
             if (! $result->successful()) {
                 throw new \RuntimeException('Failed to create Laravel application. ' . trim($result->errorOutput()));
             }
