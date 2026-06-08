@@ -40,6 +40,16 @@ class AccountController extends Controller
             return back()->withInput()->with('error', $e->getMessage());
         }
 
+        if ($request->boolean('ssl')) {
+            try {
+                $this->provisionSsl($account);
+                $account->update(['ssl' => true]);
+            } catch (\RuntimeException $e) {
+                return redirect()->route('accounts.show', $account)
+                    ->with('warning', "Account created, but SSL could not be enabled: {$e->getMessage()}");
+            }
+        }
+
         return redirect()->route('accounts.index')->with('success', "Account for {$account->domain} created successfully.");
     }
 
@@ -162,8 +172,27 @@ class AccountController extends Controller
             ->with('success', "SSL " . ($enabling ? 'enabled' : 'disabled') . " for {$account->domain}.");
     }
 
+    private function checkDnsPointsHere(string $domain): void
+    {
+        $serverIp = env('SERVER_IP') ?: gethostbyname(gethostname());
+
+        $records = @dns_get_record($domain, DNS_A);
+
+        if (empty($records)) {
+            throw new \RuntimeException("No DNS A record found for {$domain}. Point the domain to this server ({$serverIp}) before enabling SSL.");
+        }
+
+        $domainIps = array_column($records, 'ip');
+
+        if (! in_array($serverIp, $domainIps, true)) {
+            throw new \RuntimeException("DNS check failed: {$domain} resolves to " . implode(', ', $domainIps) . " but this server is {$serverIp}. Update your DNS before enabling SSL.");
+        }
+    }
+
     private function provisionSsl(Account $account): void
     {
+        $this->checkDnsPointsHere($account->domain);
+
         $command = [
             'sudo', 'certbot', '--nginx',
             '-d', $account->domain,

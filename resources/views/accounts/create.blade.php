@@ -30,6 +30,24 @@
                 </div>
             </div>
             <div class="row mb-3">
+                <label for="ssl" class="col-sm-2 col-form-label">SSL</label>
+                <div class="col">
+                    <div class="form-check form-switch mt-2">
+                        <input class="form-check-input" type="checkbox" role="switch" id="ssl" name="ssl" {{ old('ssl') ? 'checked' : '' }}>
+                        <label class="form-check-label text-muted" for="ssl">Supplied by Let's Encrypt</label>
+                    </div>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <label for="laravel" class="col-sm-2 col-form-label">Laravel</label>
+                <div class="col">
+                    <div class="form-check form-switch mt-2">
+                        <input class="form-check-input" type="checkbox" role="switch" id="laravel" name="laravel" {{ old('laravel') ? 'checked' : '' }}>
+                        <label class="form-check-label text-muted" for="laravel">Create a new Laravel Application</label>
+                    </div>
+                </div>
+            </div>
+            <div class="row mb-3">
                 <div class="col text-end offset-sm-2 text-sm-start">
                     <button type="submit" class="btn btn-primary">Create Account</button>
                 </div>
