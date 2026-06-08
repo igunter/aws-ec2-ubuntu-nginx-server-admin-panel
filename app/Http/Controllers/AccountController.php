@@ -320,8 +320,10 @@ class AccountController extends Controller
         $sitesAvailable = "/etc/nginx/sites-available/{$domain}";
         $sitesEnabled   = "/etc/nginx/sites-enabled/{$domain}";
 
-        $this->cmd(['sudo', 'useradd', '-m', '-s', '/bin/bash', $slug],
-            'Failed to create system user.');
+        if (! Process::run(['id', $slug])->successful()) {
+            $this->cmd(['sudo', 'useradd', '-m', '-s', '/bin/bash', $slug],
+                'Failed to create system user.');
+        }
 
         $this->cmd(['sudo', 'mkdir', '-p', $webRoot],
             'Failed to create web root.');
