@@ -64,6 +64,47 @@
     </div>
 </div>
 
+@if ($account->mysqlDatabases->isNotEmpty())
+<div class="card mt-4">
+    <h5 class="card-header d-flex justify-content-between align-items-center">
+        MySQL Databases
+        <a href="{{ route('mysql-databases.create') }}" class="btn btn-sm btn-primary">
+            <i class="bi bi-plus-lg"></i> Add
+        </a>
+    </h5>
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Database</th>
+                    <th>Users</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($account->mysqlDatabases as $db)
+                    <tr>
+                        <td class="align-middle">{{ $db->name }}</td>
+                        <td class="align-middle">{{ $db->mysqlUsers->count() }}</td>
+                        <td class="align-middle text-end">
+                            <a href="{{ route('mysql-databases.show', $db) }}" class="btn btn-sm btn-secondary">
+                                <i class="bi bi-people"></i> Users
+                            </a>
+                            <form action="{{ route('mysql-databases.destroy', $db) }}" method="POST"
+                                  class="d-inline delete-form" data-name="{{ $db->name }}">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-sm btn-danger"><i class="bi bi-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+</div>
+@endif
+
 @if ($account->ftpAccounts->isNotEmpty())
 <div class="card mt-4">
     <h5 class="card-header">

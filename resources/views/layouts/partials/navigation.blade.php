@@ -15,6 +15,11 @@
         </a>
     </li>
     <li class="nav-item">
+        <a class="nav-link px-0 {{ request()->routeIs('mysql-databases.*') ? 'active fw-semibold' : '' }}" href="{{ route('mysql-databases.index') }}">
+            <i class="bi bi-database"></i> MySQL Databases
+        </a>
+    </li>
+    <li class="nav-item">
         <a class="nav-link px-0 {{ request()->routeIs('users.*') ? 'active fw-semibold' : '' }}" href="{{ route('users.index') }}">
             <i class="bi bi-person-gear"></i> Users
         </a>

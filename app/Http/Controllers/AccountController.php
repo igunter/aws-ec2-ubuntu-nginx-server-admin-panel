@@ -137,7 +137,10 @@ class AccountController extends Controller
 
     public function show(Account $account)
     {
-        $account->load(['ftpAccounts' => fn($q) => $q->orderBy('root_directory')]);
+        $account->load(
+            ['ftpAccounts' => fn($q) => $q->orderBy('root_directory')],
+            'mysqlDatabases.mysqlUsers'
+        );
 
         return view('accounts.show', compact('account'));
     }
