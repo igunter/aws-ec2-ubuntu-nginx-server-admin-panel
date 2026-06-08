@@ -36,19 +36,20 @@ class FtpAccountController extends Controller
         $username = $validated['username'] . '@' . $account->domain;
         $ftpRoot  = '/var/www/' . $account->slug . $validated['root_directory'];
 
+        $passwordHash = bcrypt($validated['password']);
+
         try {
-            FtpService::provision($username, $validated['password'], $ftpRoot);
+            FtpService::provision($username, $passwordHash, $ftpRoot);
         } catch (\RuntimeException $e) {
             return back()->withInput()->with('error', $e->getMessage());
         }
 
         FtpAccount::create([
-            'account_id'      => $validated['account_id'],
-            'username'        => $username,
-            'password'        => $validated['password'],
-            'hashed_password' => bcrypt($validated['password']),
-            'root_directory'  => $validated['root_directory'],
-            'is_active'       => true,
+            'account_id'     => $validated['account_id'],
+            'username'       => $username,
+            'password'       => $passwordHash,
+            'root_directory' => $validated['root_directory'],
+            'is_active'      => true,
         ]);
 
         return redirect()->route('ftp-accounts.index')->with('success', 'FTP account created successfully.');
@@ -77,7 +78,7 @@ class FtpAccountController extends Controller
         $rootChanged     = $validated['root_directory'] !== $ftpAccount->root_directory;
         $deactivating    = ! $isActive && $ftpAccount->is_active;
         $activating      = $isActive && ! $ftpAccount->is_active;
-        $newPassword     = $passwordChanged ? $validated['password'] : $ftpAccount->password;
+        $newPasswordHash = $passwordChanged ? bcrypt($validated['password']) : $ftpAccount->password;
 
         try {
             if ($deactivating) {
@@ -85,23 +86,17 @@ class FtpAccountController extends Controller
             } elseif ($isActive && ($activating || $passwordChanged || $rootChanged)) {
                 $account = $ftpAccount->account;
                 $ftpRoot = '/var/www/' . $account->slug . $validated['root_directory'];
-                FtpService::provision($ftpAccount->username, $newPassword, $ftpRoot);
+                FtpService::provision($ftpAccount->username, $newPasswordHash, $ftpRoot);
             }
         } catch (\RuntimeException $e) {
             return back()->withInput()->with('error', $e->getMessage());
         }
 
-        $updateData = [
-            'password'       => $newPassword,
+        $ftpAccount->update([
+            'password'       => $newPasswordHash,
             'root_directory' => $validated['root_directory'],
             'is_active'      => $isActive,
-        ];
-
-        if ($passwordChanged) {
-            $updateData['hashed_password'] = bcrypt($validated['password']);
-        }
-
-        $ftpAccount->update($updateData);
+        ]);
 
         return redirect()->route('ftp-accounts.index')->with('success', 'FTP account updated successfully.');
     }

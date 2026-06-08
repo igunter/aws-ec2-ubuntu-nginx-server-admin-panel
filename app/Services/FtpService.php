@@ -9,15 +9,14 @@ class FtpService
     private const PASSWD_FILE  = '/etc/vsftpd/virtual_users.passwd';
     private const USER_CONF_DIR = '/etc/vsftpd/user_conf';
 
-    public static function provision(string $username, string $password, string $ftpRoot): void
+    public static function provision(string $username, string $passwordHash, string $ftpRoot): void
     {
         static::cmd(['sudo', 'mkdir', '-p', dirname(self::PASSWD_FILE)], 'Failed to create vsftpd directory.');
         static::cmd(['sudo', 'mkdir', '-p', self::USER_CONF_DIR], 'Failed to create vsftpd user_conf directory.');
 
         $current = @file_get_contents(self::PASSWD_FILE) ?: '';
-        $hash    = password_hash($password, PASSWORD_BCRYPT);
         $lines   = array_filter(explode("\n", $current), fn($l) => trim($l) !== '' && ! str_starts_with($l, "{$username}:"));
-        $lines[] = "{$username}:{$hash}";
+        $lines[] = "{$username}:{$passwordHash}";
 
         $result = Process::input(implode("\n", $lines) . "\n")->run(['sudo', 'tee', self::PASSWD_FILE]);
         if (! $result->successful()) {

@@ -13,14 +13,12 @@ class FtpAccount extends Authenticatable
         'account_id',
         'username',
         'password',
-        'hashed_password',
         'root_directory',
         'is_active',
     ];
 
     protected $hidden = [
         'password',
-        'hashed_password',
     ];
 
     public function getAuthIdentifierName(): string
@@ -30,7 +28,7 @@ class FtpAccount extends Authenticatable
 
     public function getAuthPassword(): string
     {
-        return $this->hashed_password ?? '';
+        return $this->password ?? '';
     }
 
     public function getRememberTokenName(): ?string

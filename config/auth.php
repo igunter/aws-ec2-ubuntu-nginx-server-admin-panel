@@ -74,7 +74,7 @@ return [
         ],
 
         'ftp_accounts' => [
-            'driver' => 'eloquent',
+            'driver' => 'ftp_eloquent',
             'model' => FtpAccount::class,
         ],
 
