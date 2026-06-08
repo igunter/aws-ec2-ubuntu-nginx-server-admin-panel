@@ -364,16 +364,25 @@ class AccountController extends Controller
             }
 
             // Copy .env and write app key (skipped by --no-scripts)
-            if (! file_exists("{$webRoot}/.env")) {
-                copy("{$webRoot}/.env.example", "{$webRoot}/.env");
+            $result = Process::run(['cp', "{$webRoot}/.env.example", "{$webRoot}/.env"]);
+            if (! $result->successful()) {
+                throw new \RuntimeException('Failed to copy .env.example. ' . trim($result->errorOutput()));
             }
             $key = 'base64:' . base64_encode(random_bytes(32));
-            $env = file_get_contents("{$webRoot}/.env");
-            file_put_contents("{$webRoot}/.env", str_replace('APP_KEY=', "APP_KEY={$key}", $env));
+            $result = Process::run(['sed', '-i', "s/APP_KEY=/APP_KEY={$key}/", "{$webRoot}/.env"]);
+            if (! $result->successful()) {
+                throw new \RuntimeException('Failed to set APP_KEY. ' . trim($result->errorOutput()));
+            }
 
             // Create SQLite database and migrate (skipped by --no-scripts)
-            touch("{$webRoot}/database/database.sqlite");
+            $result = Process::run(['touch', "{$webRoot}/database/database.sqlite"]);
+            if (! $result->successful()) {
+                throw new \RuntimeException('Failed to create SQLite database. ' . trim($result->errorOutput()));
+            }
             Process::path($webRoot)->timeout(60)->run(['php', 'artisan', 'migrate', '--force']);
+
+            // Install npm dependencies to generate package-lock.json
+            Process::path($webRoot)->timeout(300)->run(['npm', 'install', '--no-audit', '--no-fund']);
         } else {
             $welcome = "<?php\necho '<h1>Welcome, {$domain}</h1>';\n";
             $result = Process::input($welcome)->run(['sudo', 'tee', "{$webRoot}/index.php"]);
